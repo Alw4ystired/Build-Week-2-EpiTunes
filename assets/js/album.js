@@ -23,10 +23,13 @@
       - click sul cuore -> toggleFavourite(track)
 */
 
+
 const player = initPage("home");
 
 const albumHero = document.querySelector("#album-hero");
 const tracklist = document.querySelector("#tracklist");
+
+const API_URL = "https://itunes.apple.com";
 
 const loadAlbum = async () => {
    // TODO: implementare come da elenco sopra

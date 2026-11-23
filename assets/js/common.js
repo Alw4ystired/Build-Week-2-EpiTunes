@@ -67,8 +67,27 @@ const MAX_HISTORY = 12;
 /* ============================ 2. Helpers ============================ */
 
 /*
+creaElemento(tag, classe, genitore, testo, id)
+Crea un elemento del DOM e, se gli passiamo gli argomenti opzionali,
+gli mette una classe, ci scrive dentro del testo, gli assegna un id
+e lo attacca a un genitore.
+Serve a non ripetere ogni volta le stesse righe, e per usare solo createElement + appendChild.
+*/
+
+function creaElemento(tag, classe, genitore, testo, id) {
+  const elemento = document.createElement(tag); // crea il nodo, per ora staccato dalla pagina
+
+  if (classe) elemento.className = classe; // salta se non passiamo la classe (undefined o "")
+  if (testo !== undefined) elemento.textContent = testo; // !== undefined perche' lo 0 e la stringa vuota sono testi validi
+  if (id) elemento.id = id; // serve dove il CSS o il JS cercano l'elemento per id
+  if (genitore) genitore.appendChild(elemento); // solo qui l'elemento entra davvero nella pagina
+
+  return elemento; // lo restituiamo per poterlo riusare dopo
+}
+
+/*
   fetchJSON(url)
-  - Fa una richiesta GET e ritorna i dati JSON
+  - Fa una richiesta GET e ritorna i dati JSON 
   - Gestisce errori HTTP e di rete con try/catch
   - In caso di errore ritorna { results: [], resultCount: 0 } per semplificare i chiamanti
 */
@@ -186,39 +205,48 @@ class Player {
   mount() {
     const footer = document.querySelector(".player");
     if (!footer) return;
-    footer.innerHTML = `
-      <div class="player-track">
-        <div class="player-cover"><img id="player-cover-img" alt="" /></div>
-        <div class="player-meta">
-          <p class="player-title" id="player-title">Seleziona un brano</p>
-          <p class="player-artist" id="player-artist">—</p>
-        </div>
-      </div>
 
-      <div class="player-center">
-        <div class="player-controls">
-          <button class="btn-ctrl" id="btn-shuffle" aria-label="Shuffle">⇄</button>
-          <button class="btn-ctrl" id="btn-prev"    aria-label="Precedente">⏮</button>
-          <button class="btn-play" id="btn-toggle"  aria-label="Play/Pausa">▶</button>
-          <button class="btn-ctrl" id="btn-next"    aria-label="Successivo">⏭</button>
-          <button class="btn-ctrl" id="btn-repeat"  aria-label="Ripeti">↻</button>
-        </div>
-        <div class="player-progress">
-          <span id="time-current">0:00</span>
-          <div class="progress-bar" id="progress-bar">
-            <div class="progress-fill" id="progress-fill"></div>
-          </div>
-          <span id="time-total">0:00</span>
-        </div>
-      </div>
+    footer.replaceChildren(); // svuota, come faceva innerHTML
 
-      <div class="player-right">
-        <span>🔊</span>
-        <div class="volume-bar" id="volume-bar">
-          <div class="volume-fill" id="volume-fill" style="width: 80%"></div>
-        </div>
-      </div>
-    `;
+    /* ---------- SINISTRA: cover + titolo/artista ---------- */
+    const playerTrack = creaElemento("div", "player-track", footer);
+
+    const playerCover = creaElemento("div", "player-cover", playerTrack);
+    const coverImg = creaElemento("img", undefined, playerCover, undefined, "player-cover-img");
+    coverImg.alt = "";
+
+    const playerMeta = creaElemento("div", "player-meta", playerTrack);
+    creaElemento("p", "player-title", playerMeta, "Seleziona un brano", "player-title");
+    creaElemento("p", "player-artist", playerMeta, "—", "player-artist");
+
+    /* ---------- CENTRO: controlli + barra di avanzamento ---------- */
+    const playerCenter = creaElemento("div", "player-center", footer);
+
+    const controls = creaElemento("div", "player-controls", playerCenter);
+    const bottoni = [
+      { id: "btn-shuffle", cls: "btn-ctrl", label: "Shuffle", text: "⇄" },
+      { id: "btn-prev", cls: "btn-ctrl", label: "Precedente", text: "⏮" },
+      { id: "btn-toggle", cls: "btn-play", label: "Play/Pausa", text: "▶" },
+      { id: "btn-next", cls: "btn-ctrl", label: "Successivo", text: "⏭" },
+      { id: "btn-repeat", cls: "btn-ctrl", label: "Ripeti", text: "↻" },
+    ];
+    bottoni.forEach(({ id, cls, label, text }) => {
+      const btn = creaElemento("button", cls, controls, text, id);
+      btn.setAttribute("aria-label", label);
+    });
+
+    const progress = creaElemento("div", "player-progress", playerCenter);
+    creaElemento("span", undefined, progress, "0:00", "time-current");
+    const progressBar = creaElemento("div", "progress-bar", progress, undefined, "progress-bar");
+    creaElemento("div", "progress-fill", progressBar, undefined, "progress-fill");
+    creaElemento("span", undefined, progress, "0:00", "time-total");
+
+    /* ---------- DESTRA: volume ---------- */
+    const playerRight = creaElemento("div", "player-right", footer);
+    creaElemento("span", undefined, playerRight, "🔊");
+    const volumeBar = creaElemento("div", "volume-bar", playerRight, undefined, "volume-bar");
+    const volumeFill = creaElemento("div", "volume-fill", volumeBar, undefined, "volume-fill");
+    volumeFill.style.width = "80%";
 
     // TODO: aggancia eventi click su #btn-toggle, click su #progress-bar (seek),
     //       click su #volume-bar (setVolume), volume iniziale (this.audio.volume = 0.8).
@@ -290,18 +318,31 @@ const toggleFavourite = (track) => {
 const renderSidebar = (activePage) => {
   const sidebar = document.querySelector(".sidebar");
   if (!sidebar) return;
-  sidebar.innerHTML = `
-    <div class="brand">
-      <div class="brand-mark">E</div>
-      <span class="brand-text">EpiTunes</span>
-    </div>
-    <nav class="sidebar-nav">
-      <a href="index.html"  data-page="home"   ${activePage === "home" ? 'class="active"' : ""}><span class="ico">🏠</span><span>Home</span></a>
-      <a href="search.html" data-page="search" ${activePage === "search" ? 'class="active"' : ""}><span class="ico">🔍</span><span>Cerca</span></a>
-    </nav>
-    <p class="sidebar-section-title">I tuoi preferiti</p>
-    <ul class="sidebar-list" id="sidebar-favs"></ul>
-  `;
+
+  sidebar.replaceChildren();
+
+  /* ---------- Logo ---------- */
+  const brand = creaElemento("div", "brand", sidebar);
+  creaElemento("div", "brand-mark", brand, "E");
+  creaElemento("span", "brand-text", brand, "EpiTunes");
+
+  /* ---------- Navigazione ---------- */
+  const nav = creaElemento("nav", "sidebar-nav", sidebar);
+  const links = [
+    { href: "index.html", page: "home", ico: "🏠", text: "Home" },
+    { href: "search.html", page: "search", ico: "🔍", text: "Cerca" },
+  ];
+  links.forEach(({ href, page, ico, text }) => {
+    const a = creaElemento("a", activePage === page ? "active" : "", nav);
+    a.href = href;
+    a.dataset.page = page; // diventa data-page="..."
+    creaElemento("span", "ico", a, ico);
+    creaElemento("span", undefined, a, text);
+  });
+
+  /* ---------- Preferiti ---------- */
+  creaElemento("p", "sidebar-section-title", sidebar, "I tuoi preferiti");
+  creaElemento("ul", "sidebar-list", sidebar, undefined, "sidebar-favs");
   // TODO (opzionale): popola #sidebar-favs con i titoli dei preferiti
 };
 
