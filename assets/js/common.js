@@ -67,16 +67,47 @@ const MAX_HISTORY = 12;
 /* ============================ 2. Helpers ============================ */
 
 /*
+  creaElemento(tag, classe, genitore, testo, id)
+  Crea un elemento del DOM e, se gli passiamo gli argomenti opzionali,
+  gli mette una classe, ci scrive dentro del testo, gli assegna un id
+  e lo attacca a un genitore.
+  Serve a non ripetere ogni volta le stesse righe, e a rispettare il
+  vincolo del prof: niente innerHTML, solo createElement.
+*/
+function creaElemento(tag, classe, genitore, testo, id) {
+    const elemento = document.createElement(tag);          // crea il nodo, per ora staccato dalla pagina
+
+    if (classe) elemento.className = classe;               // salta se non passiamo la classe (undefined o "")
+    if (testo !== undefined) elemento.textContent = testo; // !== undefined perche' lo 0 e la stringa vuota sono testi validi
+    if (id) elemento.id = id;                              // serve dove il CSS o il JS cercano l'elemento per id
+    if (genitore) genitore.appendChild(elemento);          // solo qui l'elemento entra davvero nella pagina
+
+    return elemento;                                       // lo restituiamo per poterlo riusare dopo
+}
+/*
   fetchJSON(url)
   - Fa una richiesta GET e ritorna i dati JSON
   - Gestisce errori HTTP e di rete con try/catch
   - In caso di errore ritorna { results: [], resultCount: 0 } per semplificare i chiamanti
 */
+
 const fetchJSON = async (url) => {
-  // TODO: implementare con try/catch + await response.json()
-  // - Se response.ok è false, lancia un Error
-  // - Se la chiamata fallisce per rete, ritorna oggetto vuoto e logga l'errore
-  return { results: [], resultCount: 0 };
+  try {
+    const risposta = await fetch(url);
+    // fetch NON lancia errore sugli stati HTTP: un 404 o un 500 arrivano qui
+    // come risposte normali. Siamo noi a doverli trasformare in errori.
+    if (!risposta.ok) {
+      throw new Error(`Richiesta fallita: ${risposta.status} ${risposta.statusText}`);
+    }
+    return await risposta.json();
+  } catch (errore) {
+    // Finisce qui sia l'errore lanciato sopra, sia quelli di rete
+    // (host irraggiungibile, connessione assente, JSON malformato).
+    console.error("fetchJSON:", errore.message, "->", url);
+    // Ritorniamo la stessa forma di una risposta riuscita ma vuota:
+    // cosi' chi chiama puo' fare sempre dati.results.forEach senza controlli.
+    return { results: [], resultCount: 0 };
+  }
 };
 
 /*
