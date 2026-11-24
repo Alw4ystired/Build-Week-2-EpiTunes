@@ -182,7 +182,8 @@ class Album {
     this.artist = raw.artistName;
     this.artistId = raw.artistId;          // serve per il link all'artista nell'hero
     this.cover = raw.artworkUrl100;
-    this.year = raw.releaseDate ? raw.releaseDate.slice(0, 4) : "";
+    // La ISO che ritorna l'API di iTunes è in un formato così "2023-05-15T07:00:00Z", con .slice(0, 4) prendo in considerazione solo i primo 4 valori, nel caso di questo esempio uscirebbe "2023"
+    this.year = raw.releaseDate ? raw.releaseDate.slice(0, 4) : "Anno non trovato"; 
     this.trackCount = raw.trackCount;
   }
 }
