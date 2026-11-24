@@ -411,7 +411,31 @@ const renderSidebar = (activePage) => {
   /* ---------- Preferiti ---------- */
   creaElemento("p", "sidebar-section-title", sidebar, "I tuoi preferiti");
   creaElemento("ul", "sidebar-list", sidebar, undefined, "sidebar-favs");
-  // TODO (opzionale): popola #sidebar-favs con i titoli dei preferiti
+
+  renderSidebarFavs();
+};
+
+/*
+  renderSidebarFavs()
+  - Riempie la lista dei preferiti in sidebar.
+  - Sta in una funzione a parte perche' va richiamata anche dopo ogni
+    toggleFavourite, mentre renderSidebar gira una volta sola all'avvio.
+*/
+const renderSidebarFavs = () => {
+  const lista = document.querySelector("#sidebar-favs");
+  if (!lista) return;
+
+  const preferiti = getFavourites();
+  lista.replaceChildren();
+
+  if (preferiti.length === 0) {
+    creaElemento("li", undefined, lista, "Nessun preferito");
+    return;
+  }
+
+  preferiti.forEach((track) => {
+    creaElemento("li", undefined, lista, track.title);
+  });
 };
 
 /* ============================ 7. Inizializzazione ============================ */
