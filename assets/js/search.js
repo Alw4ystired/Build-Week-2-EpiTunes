@@ -36,7 +36,20 @@ const renderAlbumCard = (album) => { /* TODO */ };
 const renderArtistCard = (artist) => { /* TODO */ };
 
 const doSearch = async (term) => {
-   // TODO: implementare come da elenco sopra (Promise.all)
+   gridTracks.replaceChildren();
+
+   if (term === "") {
+      rowTracks.hidden = true;
+      return;
+   }
+   const url = `${API_BASE}/search?term=${encodeURIComponent(term)}&entity=song&limit=12`;
+   const dati = await fetchJSON(url);
+
+   dati.results.forEach((raw) => {
+      const track = new Track(raw);
+      creaElemento('p', undefined, gridTracks, `${track.title} - ${track.artist}`);
+   });
+   rowTracks.hidden = false;
 };
 
 const debouncedSearch = debounce(doSearch, 400);
