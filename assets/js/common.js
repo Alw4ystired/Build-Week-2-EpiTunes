@@ -144,6 +144,15 @@ const debounce = (fn, ms) => {
 */
 class Track {
   constructor(raw) {
+    this.id = raw.trackId,
+      this.name = raw.trackName,
+      this.artist = raw.artistName,
+      this.collection = raw.collectionName,
+      this.collectionId = raw.collectionId,
+      this.artistId = raw.artistId,
+      this.artwork = raw.artworkUrl100,
+      this.preview = raw.previewUrl,
+      this.track = raw.trackTimeMillis;
     // TODO: assegna alle property di this i valori da raw
     // (id, title, artist, album, albumId, artistId, cover, previewUrl, durationMs)
   }
