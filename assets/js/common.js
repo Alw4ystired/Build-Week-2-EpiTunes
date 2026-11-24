@@ -91,11 +91,24 @@ function creaElemento(tag, classe, genitore, testo, id) {
   - Gestisce errori HTTP e di rete con try/catch
   - In caso di errore ritorna { results: [], resultCount: 0 } per semplificare i chiamanti
 */
+
 const fetchJSON = async (url) => {
-  // TODO: implementare con try/catch + await response.json()
-  // - Se response.ok è false, lancia un Error
-  // - Se la chiamata fallisce per rete, ritorna oggetto vuoto e logga l'errore
-  return { results: [], resultCount: 0 };
+  try {
+    const risposta = await fetch(url);
+    // fetch NON lancia errore sugli stati HTTP: un 404 o un 500 arrivano qui
+    // come risposte normali. Siamo noi a doverli trasformare in errori.
+    if (!risposta.ok) {
+      throw new Error(`Richiesta fallita: ${risposta.status} ${risposta.statusText}`);
+    }
+    return await risposta.json();
+  } catch (errore) {
+    // Finisce qui sia l'errore lanciato sopra, sia quelli di rete
+    // (host irraggiungibile, connessione assente, JSON malformato).
+    console.error("fetchJSON:", errore.message, "->", url);
+    // Ritorniamo la stessa forma di una risposta riuscita ma vuota:
+    // cosi' chi chiama puo' fare sempre dati.results.forEach senza controlli.
+    return { results: [], resultCount: 0 };
+  }
 };
 
 /*
@@ -144,17 +157,15 @@ const debounce = (fn, ms) => {
 */
 class Track {
   constructor(raw) {
-    this.id = raw.trackId,
-      this.name = raw.trackName,
-      this.artist = raw.artistName,
-      this.collection = raw.collectionName,
-      this.collectionId = raw.collectionId,
-      this.artistId = raw.artistId,
-      this.artwork = raw.artworkUrl100,
-      this.preview = raw.previewUrl,
-      this.track = raw.trackTimeMillis;
-    // TODO: assegna alle property di this i valori da raw
-    // (id, title, artist, album, albumId, artistId, cover, previewUrl, durationMs)
+    this.id = raw.trackId;                 // identifica il brano: history, preferiti, dataset
+    this.title = raw.trackName;
+    this.artist = raw.artistName;
+    this.artistId = raw.artistId;          // per il link a artist.html?id=...
+    this.album = raw.collectionName;
+    this.albumId = raw.collectionId;       // per il link a album.html?id=...
+    this.cover = raw.artworkUrl100;        // 100x100: usa bigArt(cover) dove serve grande
+    this.previewUrl = raw.previewUrl;      // l'mp3 da dare all'elemento <audio>
+    this.durationMs = raw.trackTimeMillis; // durata del brano intero, non della preview
   }
 }
 
@@ -166,7 +177,13 @@ class Track {
 */
 class Album {
   constructor(raw) {
-    // TODO: come sopra
+    this.id = raw.collectionId;
+    this.title = raw.collectionName;
+    this.artist = raw.artistName;
+    this.artistId = raw.artistId;          // serve per il link all'artista nell'hero
+    this.cover = raw.artworkUrl100;
+    this.year = raw.releaseDate ? raw.releaseDate.slice(0, 4) : "";
+    this.trackCount = raw.trackCount;
   }
 }
 
@@ -177,7 +194,11 @@ class Album {
 */
 class Artist {
   constructor(raw) {
-    // TODO: come sopra
+    this.id = raw.artistId;
+    this.name = raw.artistName;
+    this.genre = raw.primaryGenreName;
+    // NB: l'API non restituisce nessuna immagine per l'artista.
+    // La cover della pagina artista va presa dal primo brano.
   }
 }
 
@@ -294,28 +315,65 @@ class Player {
   toggleFavourite(track) -> aggiunge o rimuove
 */
 
-const getHistory = () => {
-  // TODO: leggi STORAGE_KEY_HISTORY, JSON.parse, ritorna array (vuoto se assente)
-  return [];
+/*
+  readArray(chiave)
+  - Legge un array salvato in localStorage e lo restituisce.
+  - try/catch perche' JSON.parse esplode se il contenuto non e' JSON valido
+    (puo' capitare se qualcuno modifica a mano i dati dal pannello del browser).
+  - Ritorna sempre un array: cosi' i chiamanti possono fare .filter / .map
+    senza controllare niente.
+*/
+const readArray = (chiave) => {
+  try {
+    const salvato = localStorage.getItem(chiave);
+    if (!salvato) return [];                      // chiave mai scritta
+
+    const dati = JSON.parse(salvato);
+    return Array.isArray(dati) ? dati : [];       // se non e' un array, lo scartiamo
+  } catch (errore) {
+    console.error("readArray: dati non validi in", chiave, errore.message);
+    return [];
+  }
 };
 
+/*
+  writeArray(chiave, array)
+  - localStorage salva solo stringhe, quindi va sempre passato da JSON.stringify.
+*/
+const writeArray = (chiave, array) => {
+  localStorage.setItem(chiave, JSON.stringify(array));
+};
+
+const getHistory = () => readArray(STORAGE_KEY_HISTORY);
+
+/*
+  addToHistory(track)
+  - Rimuove l'eventuale copia dello stesso brano, poi lo rimette in testa:
+    cosi' un brano riascoltato risale in cima invece di comparire due volte.
+  - Taglia a MAX_HISTORY (12) elementi.
+  - Viene chiamata da player.play().
+*/
 const addToHistory = (track) => {
-  // TODO: array = getHistory(); rimuovi eventuale duplicato (per id);
-  //       metti track in testa; tronca a MAX_HISTORY; salva
+  const senzaDuplicato = getHistory().filter((t) => t.id !== track.id);
+  writeArray(STORAGE_KEY_HISTORY, [track, ...senzaDuplicato].slice(0, MAX_HISTORY));
 };
 
-const getFavourites = () => {
-  // TODO: come getHistory ma con STORAGE_KEY_FAVOURITES
-  return [];
-};
+const getFavourites = () => readArray(STORAGE_KEY_FAVOURITES);
 
-const isFavourite = (trackId) => {
-  // TODO: return getFavourites().some(t => t.id === trackId)
-  return false;
-};
+const isFavourite = (trackId) => getFavourites().some((t) => t.id === trackId);
 
+/*
+  toggleFavourite(track)
+  - Se il brano c'e' lo toglie, se non c'e' lo aggiunge in testa.
+*/
 const toggleFavourite = (track) => {
-  // TODO: se presente per id -> rimuovi; altrimenti aggiungi in testa; salva
+  const preferiti = getFavourites();
+  const giaPresente = preferiti.find((t) => t.id === track.id);
+
+  writeArray(
+    STORAGE_KEY_FAVOURITES,
+    giaPresente ? preferiti.filter((t) => t.id !== track.id) : [track, ...preferiti]
+  );
 };
 
 /* ============================ 6. Render sidebar ============================ */
