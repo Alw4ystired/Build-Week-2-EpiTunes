@@ -39,10 +39,13 @@ const home = document.querySelector(".home");
   - una card per ogni track: cover, titolo, artista, bottone play, bottone cuore
   - se l'array è vuoto non crea niente (nessuna sezione vuota con solo il titolo)
 */
-const renderRow = (rowTitle, tracks) => {
+const renderRow = (rowTitle, tracks, idSezione) => {
   if (!tracks || tracks.length === 0) return;
 
   const section = creaElemento("section", "mt-4", home);
+  if (idSezione) {
+    section.id = idSezione;
+  }
   creaElemento("h2", "fs-4 fw-bold mb-3", section, rowTitle);
   const grid = creaElemento("div", "row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-xl-6 g-3", section);
 
@@ -76,6 +79,7 @@ const renderRow = (rowTitle, tracks) => {
       favButton.classList.toggle("is-fav", ora);
       favButton.textContent = ora ? "♥" : "♡";
       renderSidebarFavs(); // aggiorno anche la lista nella sidebar
+      AGGIORNA_PREFERITI(); 
     });
 
     // Bottone play (disattivato se il brano non ha l'anteprima)
@@ -97,10 +101,24 @@ const renderRow = (rowTitle, tracks) => {
   });
 };
 
+const AGGIORNA_PREFERITI = () => {
+  const VECCHIA = document.querySelector("#sezione-preferiti")
+  if (VECCHIA){
+    VECCHIA.remove();
+  }
+
+  renderRow("I tuoi preferiti", getFavourites(), "sezione-preferiti");
+
+  const NUOVA = document.querySelector("#sezione-preferiti");
+  if (NUOVA) {
+    home.prepend(NUOVA);
+  }
+}
+
 /* ---------- I tuoi preferiti ---------- */
 
 const preferiti = getFavourites(); // array di brani salvati in localStorage
-renderRow("I tuoi preferiti", preferiti); // se è vuoto, renderRow non mostra niente
+renderRow("I tuoi preferiti", preferiti, "sezione-preferiti"); // se è vuoto, renderRow non mostra niente
 
 /* ---------- Suggerimenti ---------- */
 
