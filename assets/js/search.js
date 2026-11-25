@@ -1,3 +1,16 @@
+import {
+  initPage,
+  creaElemento,
+  fetchJSON,
+  bigArt,
+  debounce,
+  Track,
+  Album,
+  Artist,
+  API_BASE,
+  STORAGE_KEY_LAST_SEARCH,
+} from "./common.js";
+
 const player = initPage("search");
 const input = document.querySelector("#search-input");
 const rowTracks = document.querySelector("#row-tracks");

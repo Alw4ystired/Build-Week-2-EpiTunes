@@ -1,3 +1,4 @@
+
 /* ============================================================
    common.js — codice condiviso tra tutte le pagine
    ============================================================
@@ -155,7 +156,7 @@ const debounce = (fn, ms) => {
   Campi utili dell'API: trackId, trackName, artistName, collectionName,
   collectionId, artistId, artworkUrl100, previewUrl, trackTimeMillis.
 */
-class Track {
+ class Track {
   constructor(raw) {
     this.id = raw.trackId;                 // identifica il brano: history, preferiti, dataset
     this.title = raw.trackName;
@@ -175,7 +176,7 @@ class Track {
   Campi utili: collectionId, collectionName, artistName, artworkUrl100,
   releaseDate, trackCount.
 */
-class Album {
+ class Album {
   constructor(raw) {
     this.id = raw.collectionId;
     this.title = raw.collectionName;
@@ -453,3 +454,31 @@ const initPage = (activePage) => {
   window.player = player;
   return player;
 };
+
+
+export {
+  // Costanti
+  API_BASE,
+  STORAGE_KEY_LAST_SEARCH,
+  // Helpers
+  creaElemento,
+  fetchJSON,
+  bigArt,
+  formatTime,
+  debounce,
+  // Classi
+  Track,
+  Album,
+  Artist,
+  Player,
+  // localStorage
+  getHistory,
+  addToHistory,
+  getFavourites,
+  isFavourite,
+  toggleFavourite,
+  // Render
+  renderSidebarFavs,
+  // Inizializzazione
+  initPage,
+}

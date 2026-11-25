@@ -1,3 +1,16 @@
+// Importo da common.js solo quello che questo file usa davvero
+import {
+  initPage,
+  getFavourites,
+  toggleFavourite,
+  isFavourite,
+  renderSidebarFavs,
+  creaElemento,
+  fetchJSON,
+  bigArt,
+  Track,
+} from "./common.js";
+
 /* ============================================================
    home.js — costruzione della Home
    ============================================================
@@ -22,20 +35,115 @@ const home = document.querySelector(".home");
 
 /*
   renderRow(rowTitle, tracks)
-  - crea una <section class="row"> con titolo h2 e griglia .grid di .card per ogni track
-  - aggancia click handler che chiamano player.play(track) e toggleFavourite(track)
+  - crea una <section> con titolo h2 e una griglia Bootstrap (row > col > card)
+  - una card per ogni track: cover, titolo, artista, bottone play, bottone cuore
+  - se l'array è vuoto non crea niente (nessuna sezione vuota con solo il titolo)
 */
 const renderRow = (rowTitle, tracks) => {
-  // TODO
+  if (!tracks || tracks.length === 0) return;
+
+  const section = creaElemento("section", "mt-4", home);
+  creaElemento("h2", "fs-4 fw-bold mb-3", section, rowTitle);
+  const grid = creaElemento("div", "row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-xl-6 g-3", section);
+
+  tracks.forEach((track) => {
+    // row > col > card, come in search.js
+    const column = creaElemento("div", "col", grid);
+    const card = creaElemento("article", "card h-100 border-0", column);
+    card.dataset.trackId = String(track.id);
+
+    // Cover
+    const imageWrap = creaElemento("div", "card-image-wrap", card);
+    const image = creaElemento("img", "w-100 h-100 object-fit-cover d-block", imageWrap);
+    image.src = bigArt(track.cover);
+    image.alt = track.title ?? "";
+    image.loading = "lazy";
+
+    // Testi
+    creaElemento("p", "card-title", card, track.title);
+    creaElemento("p", "card-sub", card, track.artist);
+
+    // Bottone cuore: parte pieno se il brano è già tra i preferiti
+    const giaPreferito = isFavourite(track.id);
+    const favButton = creaElemento("button", giaPreferito ? "card-fav is-fav" : "card-fav", card, giaPreferito ? "♥" : "♡");
+    favButton.type = "button";
+    favButton.setAttribute("aria-label", `Aggiungi ${track.title} ai preferiti`);
+
+    favButton.addEventListener("click", (event) => {
+      event.stopPropagation(); // non deve far partire anche il click sulla card
+      toggleFavourite(track);
+      const ora = isFavourite(track.id); // rileggo lo stato aggiornato
+      favButton.classList.toggle("is-fav", ora);
+      favButton.textContent = ora ? "♥" : "♡";
+      renderSidebarFavs(); // aggiorno anche la lista nella sidebar
+    });
+
+    // Bottone play (disattivato se il brano non ha l'anteprima)
+    const playButton = creaElemento("button", "card-play", card, "▶");
+    playButton.type = "button";
+    playButton.setAttribute("aria-label", `Riproduci ${track.title} di ${track.artist}`);
+    playButton.disabled = !track.previewUrl;
+
+    playButton.addEventListener("click", (event) => {
+      event.stopPropagation();
+      if (track.previewUrl) player.play(track);
+    });
+
+    // Click su tutta la card = play (tranne se ho cliccato un bottone)
+    card.addEventListener("click", (event) => {
+      if (event.target.closest("button")) return;
+      if (track.previewUrl) player.play(track);
+    });
+  });
+};
+
+/* ---------- I tuoi preferiti ---------- */
+
+const preferiti = getFavourites(); // array di brani salvati in localStorage
+renderRow("I tuoi preferiti", preferiti); // se è vuoto, renderRow non mostra niente
+
+/* ---------- Suggerimenti ---------- */
+
+const caricaSuggerimenti = async (termine) => {
+  const url = `https://itunes.apple.com/search?term=${encodeURIComponent(termine)}&entity=song&limit=12`;
+
+  const dati = await fetchJSON(url); // fa la richiesta e trasforma la risposta in un oggetto JS
+
+  // da ogni risultato "grezzo" dell'API crea un oggetto Track, in un nuovo array
+  const brani = dati.results.map((raw) => new Track(raw));
+
+  // mescola i brani in ordine casuale
+  brani.sort(() => Math.random() - 0.5);
+
+  // quanti brani vengono mostrati a schermo
+  return brani.slice(0, 6);
 };
 
 /*
   loadHome()
-  - chiama Promise.all sulle 3 fetch di suggerimenti
-  - costruisce le righe nell'ordine: history, favourites, pop, rock, hits
+  - lancia in parallelo le 3 ricerche dei suggerimenti
+  - costruisce le righe nell'ordine: pop, rock, hits
 */
 const loadHome = async () => {
-  // TODO
+  // Le tre ricerche partono insieme
+  const risultati = await Promise.allSettled([
+    caricaSuggerimenti("pop"),
+    caricaSuggerimenti("rock"),
+    caricaSuggerimenti("hits"),
+  ]);
+  const [pop, rock, hits] = risultati;
+
+  if (pop.status === "fulfilled") {
+    renderRow("Suggerimenti pop", pop.value);
+  }
+
+  if (rock.status === "fulfilled") {
+    renderRow("Suggerimenti rock", rock.value);
+  }
+
+  if (hits.status === "fulfilled") {
+    renderRow("Suggerimenti hits", hits.value);
+  }
 };
 
 loadHome();
