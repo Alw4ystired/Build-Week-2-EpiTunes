@@ -43,58 +43,130 @@ const renderRow = (rowTitle, tracks) => {
   if (!tracks || tracks.length === 0) return;
 
   const section = creaElemento("section", "mt-4", home);
+  section.dataset.rowTitle = rowTitle;
+
   creaElemento("h2", "fs-4 fw-bold mb-3", section, rowTitle);
-  const grid = creaElemento("div", "row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-xl-6 g-3", section);
+
+  const grid = creaElemento(
+    "div",
+    "row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-xl-6 g-3",
+    section
+  );
 
   tracks.forEach((track) => {
-    // row > col > card, come in search.js
     const column = creaElemento("div", "col", grid);
     const card = creaElemento("article", "card h-100 border-0", column);
     card.dataset.trackId = String(track.id);
 
     // Cover
     const imageWrap = creaElemento("div", "card-image-wrap", card);
-    const image = creaElemento("img", "w-100 h-100 object-fit-cover d-block", imageWrap);
+    const image = creaElemento(
+      "img",
+      "w-100 h-100 object-fit-cover d-block",
+      imageWrap
+    );
+
     image.src = bigArt(track.cover);
     image.alt = track.title ?? "";
     image.loading = "lazy";
 
-    // Testi
+    // Titolo e artista
     creaElemento("p", "card-title", card, track.title);
     creaElemento("p", "card-sub", card, track.artist);
 
-    // Bottone cuore: parte pieno se il brano è già tra i preferiti
+    // Cuore
     const giaPreferito = isFavourite(track.id);
-    const favButton = creaElemento("button", giaPreferito ? "card-fav is-fav" : "card-fav", card, giaPreferito ? "♥" : "♡");
+    const favButton = creaElemento(
+      "button",
+      giaPreferito ? "card-fav is-fav" : "card-fav",
+      card,
+      giaPreferito ? "♥" : "♡"
+    );
+
     favButton.type = "button";
-    favButton.setAttribute("aria-label", `Aggiungi ${track.title} ai preferiti`);
+    favButton.setAttribute(
+      "aria-label",
+      `${giaPreferito ? "Rimuovi" : "Aggiungi"} ${track.title} ${
+        giaPreferito ? "dai" : "ai"
+      } preferiti`
+    );
 
     favButton.addEventListener("click", (event) => {
-      event.stopPropagation(); // non deve far partire anche il click sulla card
+      event.stopPropagation();
+
+      // Aggiunge o rimuove il brano dai preferiti
       toggleFavourite(track);
-      const ora = isFavourite(track.id); // rileggo lo stato aggiornato
-      favButton.classList.toggle("is-fav", ora);
-      favButton.textContent = ora ? "♥" : "♡";
-      renderSidebarFavs(); // aggiorno anche la lista nella sidebar
+
+      // Legge lo stato aggiornato
+      const oraPreferito = isFavourite(track.id);
+
+      // Aggiorna il cuore in tutte le schede dello stesso brano
+      home.querySelectorAll(".card").forEach((altraCard) => {
+        if (altraCard.dataset.trackId !== String(track.id)) return;
+
+        const altroCuore = altraCard.querySelector(".card-fav");
+        if (!altroCuore) return;
+
+        altroCuore.classList.toggle("is-fav", oraPreferito);
+        altroCuore.textContent = oraPreferito ? "♥" : "♡";
+        altroCuore.setAttribute(
+          "aria-label",
+          `${oraPreferito ? "Rimuovi" : "Aggiungi"} ${track.title} ${
+            oraPreferito ? "dai" : "ai"
+          } preferiti`
+        );
+      });
+
+      // Rimuove la vecchia riga dei preferiti
+      home
+        .querySelector('[data-row-title="I tuoi preferiti"]')
+        ?.remove();
+
+      // La ricrea solo se ci sono ancora brani preferiti
+      const preferitiAggiornati = getFavourites();
+      const rigaPreferiti = renderRow(
+        "I tuoi preferiti",
+        preferitiAggiornati
+      );
+
+      // Mantiene i preferiti prima dei suggerimenti
+      const rigaPop = home.querySelector(
+        '[data-row-title="Suggerimenti pop"]'
+      );
+
+      if (rigaPreferiti && rigaPop) {
+        home.insertBefore(rigaPreferiti, rigaPop);
+      }
     });
 
-    // Bottone play (disattivato se il brano non ha l'anteprima)
+    // Bottone play
     const playButton = creaElemento("button", "card-play", card, "▶");
     playButton.type = "button";
-    playButton.setAttribute("aria-label", `Riproduci ${track.title} di ${track.artist}`);
+    playButton.setAttribute(
+      "aria-label",
+      `Riproduci ${track.title} di ${track.artist}`
+    );
     playButton.disabled = !track.previewUrl;
 
     playButton.addEventListener("click", (event) => {
       event.stopPropagation();
-      if (track.previewUrl) player.play(track);
+
+      if (track.previewUrl) {
+        player.play(track);
+      }
     });
 
-    // Click su tutta la card = play (tranne se ho cliccato un bottone)
+    // Click sulla card per riprodurre
     card.addEventListener("click", (event) => {
       if (event.target.closest("button")) return;
-      if (track.previewUrl) player.play(track);
+
+      if (track.previewUrl) {
+        player.play(track);
+      }
     });
   });
+
+  return section;
 };
 
 /* ---------- I tuoi preferiti ---------- */
@@ -147,3 +219,16 @@ const loadHome = async () => {
 };
 
 loadHome();
+
+
+const clik_album = creaElemento("a","",image);
+clik_album = `album.html?id=${track.albumId}`;
+
+const image = creaElemento(
+  "img",
+  "w-100 h-100 object-fit-cover d-block img_clik",
+  linkAlbum
+);
+
+image.src = bigArt(track.cover);
+image.alt = track.title ?? "";
