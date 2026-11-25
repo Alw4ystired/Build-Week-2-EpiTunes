@@ -240,43 +240,43 @@ class Player {
     footer.replaceChildren(); // svuota, come faceva innerHTML
 
     /* ---------- SINISTRA: cover + titolo/artista ---------- */
-    const playerTrack = creaElemento("div", "player-track", footer);
+    const playerTrack = creaElemento("div", "player-track d-flex align-items-center", footer);
 
-    const playerCover = creaElemento("div", "player-cover", playerTrack);
-    const coverImg = creaElemento("img", undefined, playerCover, undefined, "player-cover-img");
+    const playerCover = creaElemento("div", "player-cover rounded-1 overflow-hidden flex-shrink-0 bg-black", playerTrack);
+    const coverImg = creaElemento("img", "w-100 h-100 object-fit-cover d-block", playerCover, undefined, "player-cover-img");
     coverImg.alt = "";
 
     const playerMeta = creaElemento("div", "player-meta", playerTrack);
-    creaElemento("p", "player-title", playerMeta, "Seleziona un brano", "player-title");
-    creaElemento("p", "player-artist", playerMeta, "—", "player-artist");
+    creaElemento("p", "player-title fw-semibold text-truncate m-0", playerMeta, "Seleziona un brano", "player-title");
+    creaElemento("p", "player-artist text-body-secondary text-truncate m-0", playerMeta, "—", "player-artist");
 
     /* ---------- CENTRO: controlli + barra di avanzamento ---------- */
-    const playerCenter = creaElemento("div", "player-center", footer);
+    const playerCenter = creaElemento("div", "player-center d-flex flex-column align-items-center gap-2", footer);
 
-    const controls = creaElemento("div", "player-controls", playerCenter);
+    const controls = creaElemento("div", "player-controls d-flex align-items-center gap-3", playerCenter);
     const bottoni = [
-      { id: "btn-shuffle", cls: "btn-ctrl", label: "Shuffle", text: "⇄" },
-      { id: "btn-prev", cls: "btn-ctrl", label: "Precedente", text: "⏮" },
-      { id: "btn-toggle", cls: "btn-play", label: "Play/Pausa", text: "▶" },
-      { id: "btn-next", cls: "btn-ctrl", label: "Successivo", text: "⏭" },
-      { id: "btn-repeat", cls: "btn-ctrl", label: "Ripeti", text: "↻" },
+      { id: "btn-shuffle", cls: "btn-ctrl border-0 bg-transparent", label: "Shuffle", text: "⇄" },
+      { id: "btn-prev", cls: "btn-ctrl border-0 bg-transparent", label: "Precedente", text: "⏮" },
+      { id: "btn-toggle", cls: "btn-play rounded-circle border-0 bg-white text-black", label: "Play/Pausa", text: "▶" },
+      { id: "btn-next", cls: "btn-ctrl border-0 bg-transparent", label: "Successivo", text: "⏭" },
+      { id: "btn-repeat", cls: "btn-ctrl border-0 bg-transparent", label: "Ripeti", text: "↻" },
     ];
     bottoni.forEach(({ id, cls, label, text }) => {
       const btn = creaElemento("button", cls, controls, text, id);
       btn.setAttribute("aria-label", label);
     });
 
-    const progress = creaElemento("div", "player-progress", playerCenter);
+    const progress = creaElemento("div", "player-progress d-flex align-items-center gap-2 w-100", playerCenter);
     creaElemento("span", undefined, progress, "0:00", "time-current");
-    const progressBar = creaElemento("div", "progress-bar", progress, undefined, "progress-bar");
-    creaElemento("div", "progress-fill", progressBar, undefined, "progress-fill");
+    const progressBar = creaElemento("div", "progress-bar flex-grow-1", progress, undefined, "progress-bar");
+    creaElemento("div", "progress-fill h-100", progressBar, undefined, "progress-fill");
     creaElemento("span", undefined, progress, "0:00", "time-total");
 
     /* ---------- DESTRA: volume ---------- */
-    const playerRight = creaElemento("div", "player-right", footer);
+    const playerRight = creaElemento("div", "player-right align-items-center justify-content-end", footer);
     creaElemento("span", undefined, playerRight, "🔊");
     const volumeBar = creaElemento("div", "volume-bar", playerRight, undefined, "volume-bar");
-    const volumeFill = creaElemento("div", "volume-fill", volumeBar, undefined, "volume-fill");
+    const volumeFill = creaElemento("div", "volume-fill h-100", volumeBar, undefined, "volume-fill");
     volumeFill.style.width = "80%";
 
     // TODO: aggancia eventi click su #btn-toggle, click su #progress-bar (seek),
@@ -390,27 +390,28 @@ const renderSidebar = (activePage) => {
   sidebar.replaceChildren();
 
   /* ---------- Logo ---------- */
-  const brand = creaElemento("div", "brand", sidebar);
-  creaElemento("div", "brand-mark", brand, "E");
+  const brand = creaElemento("div", "brand d-flex align-items-center fw-bold", sidebar);
+  creaElemento("div", "brand-mark rounded-2 text-black", brand, "E");
   creaElemento("span", "brand-text", brand, "EpiTunes");
 
   /* ---------- Navigazione ---------- */
-  const nav = creaElemento("nav", "sidebar-nav", sidebar);
+  const nav = creaElemento("nav", "sidebar-nav d-flex flex-column gap-1 mb-4", sidebar);
   const links = [
     { href: "index.html", page: "home", ico: "🏠", text: "Home" },
     { href: "search.html", page: "search", ico: "🔍", text: "Cerca" },
   ];
   links.forEach(({ href, page, ico, text }) => {
-    const a = creaElemento("a", activePage === page ? "active" : "", nav);
+    const classeAttiva = activePage === page ? " active" : "";
+    const a = creaElemento("a", `d-flex align-items-center rounded-2 fw-semibold${classeAttiva}`, nav);
     a.href = href;
     a.dataset.page = page; // diventa data-page="..."
-    creaElemento("span", "ico", a, ico);
+    creaElemento("span", "ico text-center", a, ico);
     creaElemento("span", undefined, a, text);
   });
 
   /* ---------- Preferiti ---------- */
-  creaElemento("p", "sidebar-section-title", sidebar, "I tuoi preferiti");
-  creaElemento("ul", "sidebar-list", sidebar, undefined, "sidebar-favs");
+  creaElemento("p", "sidebar-section-title text-uppercase text-body-secondary m-0", sidebar, "I tuoi preferiti");
+  creaElemento("ul", "sidebar-list list-unstyled m-0", sidebar, undefined, "sidebar-favs");
 
   renderSidebarFavs();
 };
@@ -429,12 +430,12 @@ const renderSidebarFavs = () => {
   lista.replaceChildren();
 
   if (preferiti.length === 0) {
-    creaElemento("li", undefined, lista, "Nessun preferito");
+    creaElemento("li", "text-truncate rounded-1", lista, "Nessun preferito");
     return;
   }
 
   preferiti.forEach((track) => {
-    creaElemento("li", undefined, lista, track.title);
+    creaElemento("li", "text-truncate rounded-1", lista, track.title);
   });
 };
 
