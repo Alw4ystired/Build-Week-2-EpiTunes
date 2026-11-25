@@ -102,6 +102,7 @@ const renderRow = (rowTitle, tracks, idSezione) => {
       favButton.classList.toggle("is-fav", ora);
       favButton.textContent = ora ? "♥" : "♡";
       renderSidebarFavs(); // aggiorno anche la lista nella sidebar
+      AGGIORNA_CUORI(track);
       AGGIORNA_PREFERITI();
     });
 
@@ -147,6 +148,22 @@ const AGGIORNA_PREFERITI = () => {
   if (NUOVA) {
     home.prepend(NUOVA);
   }
+}
+
+const AGGIORNA_CUORI = (track) => {
+  const ORA = isFavourite(track.id);
+  const CARTE = document.querySelectorAll(`[data-track-id="${track.id}"]`);
+
+  CARTE.forEach((carta) => {
+    const CUORE = carta.querySelector(".card-fav");
+
+    CUORE.classList.toggle("is-fav", ORA);
+    if(ORA) {
+      CUORE.textContent = "♥";
+    } else {
+      CUORE.textContent = "♡";
+    }
+  });
 }
 
 /* ---------- I tuoi preferiti ---------- */
