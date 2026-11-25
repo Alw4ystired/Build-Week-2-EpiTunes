@@ -156,7 +156,7 @@ const debounce = (fn, ms) => {
   Campi utili dell'API: trackId, trackName, artistName, collectionName,
   collectionId, artistId, artworkUrl100, previewUrl, trackTimeMillis.
 */
- class Track {
+class Track {
   constructor(raw) {
     this.id = raw.trackId;                 // identifica il brano: history, preferiti, dataset
     this.title = raw.trackName;
@@ -176,7 +176,7 @@ const debounce = (fn, ms) => {
   Campi utili: collectionId, collectionName, artistName, artworkUrl100,
   releaseDate, trackCount.
 */
- class Album {
+class Album {
   constructor(raw) {
     this.id = raw.collectionId;
     this.title = raw.collectionName;
@@ -184,7 +184,7 @@ const debounce = (fn, ms) => {
     this.artistId = raw.artistId;          // serve per il link all'artista nell'hero
     this.cover = raw.artworkUrl100;
     // La ISO che ritorna l'API di iTunes è in un formato così "2023-05-15T07:00:00Z", con .slice(0, 4) prendo in considerazione solo i primo 4 valori, nel caso di questo esempio uscirebbe "2023"
-    this.year = raw.releaseDate ? raw.releaseDate.slice(0, 4) : "Anno non trovato"; 
+    this.year = raw.releaseDate ? raw.releaseDate.slice(0, 4) : "Anno non trovato";
     this.trackCount = raw.trackCount;
   }
 }
@@ -225,13 +225,24 @@ class Artist {
     - "timeupdate" per aggiornare la progress bar
     - "ended" per fermarsi a fine brano
 */
+
 class Player {
   constructor() {
     this.audio = document.querySelector("#audio-element");
     this.currentTrack = null;
     this.isPlaying = false;
-    // TODO: salva i riferimenti agli elementi del footer (.player-cover, .player-title, ...)
-    // TODO: aggancia eventi audio (timeupdate, ended)
+    this.el = {}; // lo riempie mount(), quando il footer esiste davvero
+
+    this.audio.addEventListener("timeupdate", () => {
+      if (!this.el.tempoCorrente || !this.audio.duration) return;
+      this.el.tempoCorrente.textContent = formatTime(this.audio.currentTime * 1000);
+      this.el.progressFill.style.width = `${(this.audio.currentTime / this.audio.duration) * 100}%`;
+    });
+
+    this.audio.addEventListener("ended", () => {
+      this.isPlaying = false;
+      if (this.el.toggle) this.el.toggle.textContent = "▶";
+    });
   }
 
   mount() {
@@ -273,37 +284,88 @@ class Player {
     creaElemento("div", "progress-fill h-100", progressBar, undefined, "progress-fill");
     creaElemento("span", undefined, progress, "0:00", "time-total");
 
+    progressBar.addEventListener("click", (evento) => {
+      const box = progressBar.getBoundingClientRect();
+      this.seek((evento.clientX - box.left) / box.width);
+    });
+
     /* ---------- DESTRA: volume ---------- */
     const playerRight = creaElemento("div", "player-right align-items-center justify-content-end", footer);
     creaElemento("span", undefined, playerRight, "🔊");
     const volumeBar = creaElemento("div", "volume-bar", playerRight, undefined, "volume-bar");
-    const volumeFill = creaElemento("div", "volume-fill h-100", volumeBar, undefined, "volume-fill");
-    volumeFill.style.width = "80%";
+    creaElemento("div", "volume-fill h-100", volumeBar, undefined, "volume-fill");
+    volumeBar.addEventListener("click", (evento) => {
+      const box = volumeBar.getBoundingClientRect();
+      this.setVolume((evento.clientX - box.left) / box.width);
+    });
 
-    // TODO: aggancia eventi click su #btn-toggle, click su #progress-bar (seek),
-    //       click su #volume-bar (setVolume), volume iniziale (this.audio.volume = 0.8).
+    /* ---------- riferimenti agli elementi, ora che esistono ---------- */
+    this.el = {
+      cover: document.querySelector("#player-cover-img"),
+      titolo: document.querySelector("#player-title"),
+      artista: document.querySelector("#player-artist"),
+      toggle: document.querySelector("#btn-toggle"),
+      tempoCorrente: document.querySelector("#time-current"),
+      tempoTotale: document.querySelector("#time-total"),
+      progressFill: document.querySelector("#progress-fill"),
+      volumeFill: document.querySelector("#volume-fill"),
+    };
+
+    this.el.toggle.addEventListener("click", () => this.togglePlay());
+    this.setVolume(0.8);
   }
 
   play(track) {
-    // TODO:
-    // 1) salva track in this.currentTrack
-    // 2) this.audio.src = track.previewUrl
-    // 3) this.audio.play()
-    // 4) aggiorna UI (cover, titolo, artista, durata totale, icona play -> "⏸")
-    // 5) chiama addToHistory(track)
-    // 6) marca .track-row.is-playing se siamo nella tracklist
+    if (!track || !track.previewUrl) return;
+
+    this.currentTrack = track;
+    this.isPlaying = true;
+    this.audio.src = track.previewUrl;
+    this.audio.play().catch(() => (this.isPlaying = false));
+
+    addToHistory(track);
+
+    if (this.el.titolo) {
+      this.el.cover.src = track.cover;
+      this.el.cover.alt = track.title;
+      this.el.titolo.textContent = track.title;
+      this.el.artista.textContent = track.artist;
+      this.el.tempoTotale.textContent = formatTime(track.durationMs);
+      this.el.toggle.textContent = "⏸";
+    }
+
+    document.querySelector(".track-row.is-playing")?.classList.remove("is-playing");
+    document.querySelector(`.track-row[data-track-id="${track.id}"]`)?.classList.add("is-playing");
   }
 
   togglePlay() {
-    // TODO: alterna play/pause + aggiorna icona del button
+    if (!this.currentTrack) return;
+
+    if (this.audio.paused) {
+      this.audio.play().catch(() => {});
+      this.isPlaying = true;
+    } else {
+      this.audio.pause();
+      this.isPlaying = false;
+    }
+
+    if (this.el.toggle) this.el.toggle.textContent = this.isPlaying ? "⏸" : "▶";
   }
 
   setVolume(v) {
-    // TODO: this.audio.volume = v; aggiorna #volume-fill style.width
+    const volume = Math.min(1, Math.max(0, v));
+    this.audio.volume = volume;
+
+    if (this.el.volumeFill) this.el.volumeFill.style.width = `${volume * 100}%`;
   }
 
   seek(percent) {
-    // TODO: this.audio.currentTime = this.audio.duration * percent
+    if (!this.audio.duration) return;
+
+    const frazione = Math.min(1, Math.max(0, percent));
+    this.audio.currentTime = this.audio.duration * frazione;
+
+    if (this.el.progressFill) this.el.progressFill.style.width = `${frazione * 100}%`;
   }
 }
 
