@@ -9,6 +9,9 @@ import {
   Artist,
   API_BASE,
   STORAGE_KEY_LAST_SEARCH,
+  isFavourite,
+  toggleFavourite,
+  renderSidebarFavs,
 } from "./common.js";
 
 const player = initPage("search");
@@ -22,7 +25,6 @@ const gridArtists = document.querySelector("#grid-artists");
 
 let searchSequence = 0;
 
-// Ogni card sta dentro una colonna Bootstrap (row > col > card)
 const createCard = (grid, tag) => {
   const column = creaElemento("div", "col", grid);
   return creaElemento(tag, "card h-100 border-0", column);
@@ -49,6 +51,28 @@ const renderTrackCard = (rawTrack) => {
   creaElemento("p", "card-title", card, track.title);
   creaElemento("p", "card-sub", card, track.artist);
 
+  const giaPreferito = isFavourite(track.id);
+  const favButton = creaElemento(
+    "button",
+    giaPreferito ? "card-fav is-fav" : "card-fav",
+    card,
+    giaPreferito ? "♥" : "♡"
+  );
+
+  favButton.type = "button";
+  favButton.setAttribute("aria-label", `Aggiungi ${track.title} ai preferiti`);
+
+  favButton.addEventListener("click", (event) => {
+    event.stopPropagation();
+    toggleFavourite(track);
+
+    const ora = isFavourite(track.id);
+    favButton.classList.toggle("is-fav", ora);
+    favButton.textContent = ora ? "♥" : "♡";
+
+    renderSidebarFavs();
+  });
+
   const playButton = creaElemento("button", "card-play", card, "▶");
 
   playButton.type = "button";
@@ -62,7 +86,6 @@ const renderTrackCard = (rawTrack) => {
 
   playButton.addEventListener("click", (event) => {
     event.stopPropagation();
-
     if (track.previewUrl) player.play(track);
   });
 
@@ -90,7 +113,12 @@ const renderArtistCard = (rawArtist) => {
 
   card.href = `artist.html?id=${artist.id}`;
 
-  creaElemento("div", "w-100 h-100 d-flex align-items-center justify-content-center fs-1", imageWrap, "🎤");
+  creaElemento(
+    "div",
+    "w-100 h-100 d-flex align-items-center justify-content-center fs-1",
+    imageWrap,
+    "🎤"
+  );
   creaElemento("p", "card-title", card, artist.name);
   creaElemento("p", "card-sub", card, artist.genre || "Artista");
 };
@@ -117,14 +145,12 @@ const doSearch = async (term) => {
   const searchUrl = (entity, limit) =>
     `${API_BASE}/search?term=${encodeURIComponent(normalizedTerm)}&entity=${entity}&limit=${limit}`;
 
-  const [trackResult, albumResult, artistResult] =
-    await Promise.allSettled([
-      fetchJSON(searchUrl("song", 12)),
-      fetchJSON(searchUrl("album", 8)),
-      fetchJSON(searchUrl("musicArtist", 8)),
-    ]);
+  const [trackResult, albumResult, artistResult] = await Promise.allSettled([
+    fetchJSON(searchUrl("song", 12)),
+    fetchJSON(searchUrl("album", 8)),
+    fetchJSON(searchUrl("musicArtist", 8)),
+  ]);
 
-  // Ignora le risposte di ricerche precedenti arrivate in ritardo.
   if (requestId !== searchSequence) return;
 
   const trackData = trackResult.status === "fulfilled" ? trackResult.value : {};
