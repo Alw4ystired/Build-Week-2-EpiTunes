@@ -41,12 +41,13 @@ const home = document.querySelector(".home");
   - una card per ogni track: cover, titolo, artista, bottone play, bottone cuore
   - se l'array è vuoto non crea niente (nessuna sezione vuota con solo il titolo)
 */
-const renderRow = (rowTitle, tracks) => {
+const renderRow = (rowTitle, tracks, idSezione) => {
   if (!tracks || tracks.length === 0) return;
 
   const section = creaElemento("section", "mt-4", home);
-  section.dataset.rowTitle = rowTitle;
-
+  if (idSezione) {
+    section.id = idSezione;
+  }
   creaElemento("h2", "fs-4 fw-bold mb-3", section, rowTitle);
 
   const grid = creaElemento(
@@ -98,47 +99,11 @@ const renderRow = (rowTitle, tracks) => {
 
       // Aggiunge o rimuove il brano dai preferiti
       toggleFavourite(track);
-
-      // Legge lo stato aggiornato
-      const oraPreferito = isFavourite(track.id);
-
-      // Aggiorna il cuore in tutte le schede dello stesso brano
-      home.querySelectorAll(".card").forEach((altraCard) => {
-        if (altraCard.dataset.trackId !== String(track.id)) return;
-
-        const altroCuore = altraCard.querySelector(".card-fav");
-        if (!altroCuore) return;
-
-        altroCuore.classList.toggle("is-fav", oraPreferito);
-        altroCuore.textContent = oraPreferito ? "♥" : "♡";
-        altroCuore.setAttribute(
-          "aria-label",
-          `${oraPreferito ? "Rimuovi" : "Aggiungi"} ${track.title} ${
-            oraPreferito ? "dai" : "ai"
-          } preferiti`
-        );
-      });
-
-      // Rimuove la vecchia riga dei preferiti
-      home
-        .querySelector('[data-row-title="I tuoi preferiti"]')
-        ?.remove();
-
-      // La ricrea solo se ci sono ancora brani preferiti
-      const preferitiAggiornati = getFavourites();
-      const rigaPreferiti = renderRow(
-        "I tuoi preferiti",
-        preferitiAggiornati
-      );
-
-      // Mantiene i preferiti prima dei suggerimenti
-      const rigaPop = home.querySelector(
-        '[data-row-title="Suggerimenti pop"]'
-      );
-
-      if (rigaPreferiti && rigaPop) {
-        home.insertBefore(rigaPreferiti, rigaPop);
-      }
+      const ora = isFavourite(track.id); // rileggo lo stato aggiornato
+      favButton.classList.toggle("is-fav", ora);
+      favButton.textContent = ora ? "♥" : "♡";
+      renderSidebarFavs(); // aggiorno anche la lista nella sidebar
+      AGGIORNA_PREFERITI(); 
     });
 
     // Bottone play
@@ -171,10 +136,24 @@ const renderRow = (rowTitle, tracks) => {
   return section;
 };
 
-/*I tuoi preferiti*/
+const AGGIORNA_PREFERITI = () => {
+  const VECCHIA = document.querySelector("#sezione-preferiti")
+  if (VECCHIA){
+    VECCHIA.remove();
+  }
+
+  renderRow("I tuoi preferiti", getFavourites(), "sezione-preferiti");
+
+  const NUOVA = document.querySelector("#sezione-preferiti");
+  if (NUOVA) {
+    home.prepend(NUOVA);
+  }
+}
+
+/* ---------- I tuoi preferiti ---------- */
 
 const preferiti = getFavourites(); // array di brani salvati in localStorage
-renderRow("I tuoi preferiti", preferiti); // se è vuoto, renderRow non mostra niente
+renderRow("I tuoi preferiti", preferiti, "sezione-preferiti"); // se è vuoto, renderRow non mostra niente
 
 
 /*Riprodotti di recente*/
