@@ -150,17 +150,11 @@ const AGGIORNA_PREFERITI = () => {
   }
 }
 
+/* ---------- Riprodotti di recente ---------- */
+renderRow("Riprodotti di recente", getHistory(), "sezione-recenti");
+
 /* ---------- I tuoi preferiti ---------- */
-
-const preferiti = getFavourites(); // array di brani salvati in localStorage
-renderRow("I tuoi preferiti", preferiti, "sezione-preferiti"); // se è vuoto, renderRow non mostra niente
-
-
-/*Riprodotti di recente*/
-renderRow("Riprodotti di recente", getHistory());
-
-/*I tuoi preferiti*/
-renderRow("I tuoi preferiti", getFavourites());
+renderRow("I tuoi preferiti", getFavourites(), "sezione-preferiti");
 
 
 /*Suggerimenti*/
@@ -172,7 +166,7 @@ const caricaSuggerimenti = async (termine) => {
     const brani = dati.results.map((raw) => new Track(raw));// da ogni risultato "grezzo" dell'API crea un oggetto Track, in un nuovo array
     
     brani.sort(() => Math.random() - 0.5);//album radom
-    return brani.slice(0, 4);
+    return brani.slice(0, 6);
 
   } catch (err) {
     console.error(err);

@@ -1,4 +1,3 @@
-
 /* ============================================================
    common.js — codice condiviso tra tutte le pagine
    ============================================================
@@ -19,6 +18,7 @@
    5) localStorage helpers (history, favourites)
    6) Render sidebar e player footer
    7) Inizializzazione al DOMContentLoaded
+   8) Export
 
    ESEMPIO USO DELL'ELEMENTO <audio>
    --------------------------------
@@ -243,6 +243,16 @@ class Player {
       this.isPlaying = false;
       if (this.el.toggle) this.el.toggle.textContent = "▶";
     });
+
+    // ⭐ MODIFICA 1 — NUOVO: se il file audio non si carica (indirizzo sbagliato,
+    // formato non supportato...) il browser lancia l'evento "error":
+    // ora lo scriviamo in console invece di ignorarlo, e rimettiamo l'icona ▶
+    this.audio.addEventListener("error", () => {
+      console.error("Audio non caricato:", this.audio.error?.message || this.audio.error?.code, this.audio.src);
+      this.isPlaying = false;
+      if (this.el.toggle) this.el.toggle.textContent = "▶";
+    });
+    // ⭐ FINE MODIFICA 1
   }
 
   mount() {
@@ -321,7 +331,16 @@ class Player {
     this.currentTrack = track;
     this.isPlaying = true;
     this.audio.src = track.previewUrl;
-    this.audio.play().catch(() => (this.isPlaying = false));
+
+    // ⭐ MODIFICA 2 — PRIMA era: this.audio.play().catch(() => (this.isPlaying = false));
+    // L'errore veniva buttato via senza scriverlo da nessuna parte (errore silenzioso).
+    // Ora lo scriviamo in console e rimettiamo l'icona ▶ coerente con lo stato.
+    this.audio.play().catch((errore) => {
+      console.error("Riproduzione fallita:", errore.name, errore.message);
+      this.isPlaying = false;
+      if (this.el.toggle) this.el.toggle.textContent = "▶";
+    });
+    // ⭐ FINE MODIFICA 2
 
     addToHistory(track);
 
@@ -342,7 +361,14 @@ class Player {
     if (!this.currentTrack) return;
 
     if (this.audio.paused) {
-      this.audio.play().catch(() => {});
+      // ⭐ MODIFICA 3 — PRIMA era: this.audio.play().catch(() => {});
+      // Stesso problema della modifica 2: ora l'errore va in console e l'icona torna ▶
+      this.audio.play().catch((errore) => {
+        console.error("Riproduzione fallita:", errore.name, errore.message);
+        this.isPlaying = false;
+        if (this.el.toggle) this.el.toggle.textContent = "▶";
+      });
+      // ⭐ FINE MODIFICA 3
       this.isPlaying = true;
     } else {
       this.audio.pause();
@@ -517,7 +543,6 @@ const initPage = (activePage) => {
   return player;
 };
 
-
 /* ============================ 8. Export ============================ */
 
 export {
@@ -545,4 +570,4 @@ export {
   renderSidebarFavs,
   // Inizializzazione
   initPage,
-}
+};
