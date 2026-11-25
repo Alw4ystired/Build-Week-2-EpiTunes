@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="it" data-bs-theme="dark">
 
 <head>
   <meta charset="UTF-8" />
@@ -11,21 +11,21 @@
 </head>
 
 <body>
-  <div class="app">
-    <aside class="sidebar"></aside>
+  <div class="app vh-100">
+    <aside class="sidebar py-4 px-3"></aside>
 
-    <main class="main">
-      <header class="topbar">
-        <div class="topbar-nav">
-          <button class="nav-btn" aria-label="Indietro">‹</button>
-          <button class="nav-btn" aria-label="Avanti">›</button>
+    <main class="main overflow-y-auto position-relative">
+      <header class="topbar sticky-top d-flex align-items-center justify-content-between px-4">
+        <div class="topbar-nav d-flex gap-2">
+          <button class="nav-btn rounded-circle border-0 lh-1" aria-label="Indietro">‹</button>
+          <button class="nav-btn rounded-circle border-0 lh-1" aria-label="Avanti">›</button>
         </div>
-        <div class="user-pill">Studente Epicode</div>
+        <div class="user-pill rounded-pill fw-semibold">Studente Epicode</div>
       </header>
 
-      <section class="search">
-        <div class="search-box">
-          <input type="text" id="search-input" class="search-input"
+      <section class="search pt-3 px-4">
+        <div class="search-box mt-2 mb-3">
+          <input type="text" id="search-input" class="search-input rounded-pill border-0"
             placeholder="Cerca un brano, un album, un artista..." autocomplete="off" />
         </div>
 
@@ -37,17 +37,17 @@
             - Click su brano -> Player; click su album/artist -> album.html/artist.html?id=...
           -->
         <div class="search-results">
-          <section class="row" id="row-tracks" hidden>
-            <h2>Brani</h2>
-            <div class="grid" id="grid-tracks"></div>
+          <section class="mt-4" id="row-tracks" hidden>
+            <h2 class="fs-4 fw-bold mb-3">Brani</h2>
+            <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-xl-6 g-3" id="grid-tracks"></div>
           </section>
-          <section class="row" id="row-albums" hidden>
-            <h2>Album</h2>
-            <div class="grid" id="grid-albums"></div>
+          <section class="mt-4" id="row-albums" hidden>
+            <h2 class="fs-4 fw-bold mb-3">Album</h2>
+            <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-xl-6 g-3" id="grid-albums"></div>
           </section>
-          <section class="row" id="row-artists" hidden>
-            <h2>Artisti</h2>
-            <div class="grid" id="grid-artists"></div>
+          <section class="mt-4" id="row-artists" hidden>
+            <h2 class="fs-4 fw-bold mb-3">Artisti</h2>
+            <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-xl-6 g-3" id="grid-artists"></div>
           </section>
         </div>
       </section>

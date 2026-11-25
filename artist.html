@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="it" data-bs-theme="dark">
 
 <head>
   <meta charset="UTF-8" />
@@ -11,16 +11,16 @@
 </head>
 
 <body>
-  <div class="app">
-    <aside class="sidebar"></aside>
+  <div class="app vh-100">
+    <aside class="sidebar py-4 px-3"></aside>
 
-    <main class="main">
-      <header class="topbar">
-        <div class="topbar-nav">
-          <button class="nav-btn" aria-label="Indietro">‹</button>
-          <button class="nav-btn" aria-label="Avanti">›</button>
+    <main class="main overflow-y-auto position-relative">
+      <header class="topbar sticky-top d-flex align-items-center justify-content-between px-4">
+        <div class="topbar-nav d-flex gap-2">
+          <button class="nav-btn rounded-circle border-0 lh-1" aria-label="Indietro">‹</button>
+          <button class="nav-btn rounded-circle border-0 lh-1" aria-label="Avanti">›</button>
         </div>
-        <div class="user-pill">Studente Epicode</div>
+        <div class="user-pill rounded-pill fw-semibold">Studente Epicode</div>
       </header>
 
       <!--
@@ -31,9 +31,9 @@
           - Hero: titolo artista grande + genere + numero ascoltatori (inventato/random)
           - Lista popolare di top tracks; click su brano -> Player
         -->
-      <section class="artist-page">
+      <section class="artist-page pt-3 px-4">
         <div class="artist-hero" id="artist-hero"></div>
-        <div class="top-tracks" id="top-tracks"></div>
+        <div class="top-tracks mt-2" id="top-tracks"></div>
       </section>
     </main>
 

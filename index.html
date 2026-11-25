@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="it" data-bs-theme="dark">
 
 <head>
   <meta charset="UTF-8" />
@@ -11,21 +11,21 @@
 </head>
 
 <body>
-  <div class="app">
-    <aside class="sidebar">
+  <div class="app vh-100">
+    <aside class="sidebar py-4 px-3">
       <!-- Riempi via JS in common.js -->
     </aside>
 
-    <main class="main">
-      <header class="topbar">
-        <div class="topbar-nav">
-          <button class="nav-btn" aria-label="Indietro">‹</button>
-          <button class="nav-btn" aria-label="Avanti">›</button>
+    <main class="main overflow-y-auto position-relative">
+      <header class="topbar sticky-top d-flex align-items-center justify-content-between px-4">
+        <div class="topbar-nav d-flex gap-2">
+          <button class="nav-btn rounded-circle border-0 lh-1" aria-label="Indietro">‹</button>
+          <button class="nav-btn rounded-circle border-0 lh-1" aria-label="Avanti">›</button>
         </div>
-        <div class="user-pill">Studente Epicode</div>
+        <div class="user-pill rounded-pill fw-semibold">Studente Epicode</div>
       </header>
 
-      <section class="home">
+      <section class="home pt-3 px-4">
         <!--
             SEZIONI DA COSTRUIRE (vedi js/home.js):
             - "Riprodotti di recente" (da localStorage history)
