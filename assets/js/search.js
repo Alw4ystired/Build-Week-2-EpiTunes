@@ -40,6 +40,7 @@ const doSearch = async (term) => {
 
    if (term === "") {
       rowTracks.hidden = true;
+      localStorage.removeItem(STORAGE_KEY_LAST_SEARCH);
       return;
    }
    const url = `${API_BASE}/search?term=${encodeURIComponent(term)}&entity=song&limit=12`;
@@ -50,6 +51,7 @@ const doSearch = async (term) => {
       creaElemento('p', undefined, gridTracks, `${track.title} - ${track.artist}`);
    });
    rowTracks.hidden = false;
+   localStorage.setItem(STORAGE_KEY_LAST_SEARCH, term);
 };
 
 const debouncedSearch = debounce(doSearch, 400);
@@ -58,4 +60,9 @@ input.addEventListener("input", (event) => {
    debouncedSearch(event.target.value.trim());
 });
 
-// TODO: al caricamento, recupera l'ultima query da localStorage e lancia doSearch(lastQuery)
+const ultimaRicerca = localStorage.getItem(STORAGE_KEY_LAST_SEARCH);
+
+if (ultimaRicerca) {
+   input.value = ultimaRicerca;
+   doSearch(ultimaRicerca);
+}
