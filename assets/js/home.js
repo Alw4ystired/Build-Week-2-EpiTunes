@@ -4,7 +4,9 @@ import {
   getFavourites,
   toggleFavourite,
   isFavourite,
+  getHistory,
   renderSidebarFavs,
+  
   creaElemento,
   fetchJSON,
   bigArt,
@@ -90,7 +92,7 @@ const renderRow = (rowTitle, tracks) => {
         giaPreferito ? "dai" : "ai"
       } preferiti`
     );
-
+    //clicco dei favoriti 
     favButton.addEventListener("click", (event) => {
       event.stopPropagation();
 
@@ -169,27 +171,36 @@ const renderRow = (rowTitle, tracks) => {
   return section;
 };
 
-/* ---------- I tuoi preferiti ---------- */
+/*I tuoi preferiti*/
 
 const preferiti = getFavourites(); // array di brani salvati in localStorage
 renderRow("I tuoi preferiti", preferiti); // se è vuoto, renderRow non mostra niente
 
-/* ---------- Suggerimenti ---------- */
+
+/*Riprodotti di recente*/
+renderRow("Riprodotti di recente", getHistory());
+
+/*I tuoi preferiti*/
+renderRow("I tuoi preferiti", getFavourites());
+
+
+/*Suggerimenti*/
 
 const caricaSuggerimenti = async (termine) => {
-  const url = `https://itunes.apple.com/search?term=${encodeURIComponent(termine)}&entity=song&limit=12`;
+  try {
+    const url = `https://itunes.apple.com/search?term=${encodeURIComponent(termine)}&entity=song&limit=12`;
+    const dati = await fetchJSON(url);// fa la richiesta e trasforma la risposta in un oggetto JS
+    const brani = dati.results.map((raw) => new Track(raw));// da ogni risultato "grezzo" dell'API crea un oggetto Track, in un nuovo array
+    
+    brani.sort(() => Math.random() - 0.5);//album radom
+    return brani.slice(0, 4);
 
-  const dati = await fetchJSON(url); // fa la richiesta e trasforma la risposta in un oggetto JS
-
-  // da ogni risultato "grezzo" dell'API crea un oggetto Track, in un nuovo array
-  const brani = dati.results.map((raw) => new Track(raw));
-
-  // mescola i brani in ordine casuale
-  brani.sort(() => Math.random() - 0.5);
-
-  // quanti brani vengono mostrati a schermo
-  return brani.slice(0, 6);
+  } catch (err) {
+    console.error(err);
+    return []; // renderRow con array vuoto non crea niente
+  }
 };
+caricaSuggerimenti("hits pop")
 
 /*
   loadHome()
@@ -221,14 +232,8 @@ const loadHome = async () => {
 loadHome();
 
 
-const clik_album = creaElemento("a","",image);
-clik_album = `album.html?id=${track.albumId}`;
 
-const image = creaElemento(
-  "img",
-  "w-100 h-100 object-fit-cover d-block img_clik",
-  linkAlbum
-);
 
-image.src = bigArt(track.cover);
-image.alt = track.title ?? "";
+
+
+
