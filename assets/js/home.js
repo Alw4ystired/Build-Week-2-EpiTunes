@@ -159,9 +159,6 @@ renderRow("I tuoi preferiti", preferiti, "sezione-preferiti"); // se è vuoto, r
 /*Riprodotti di recente*/
 renderRow("Riprodotti di recente", getHistory());
 
-/*I tuoi preferiti*/
-renderRow("I tuoi preferiti", getFavourites());
-
 
 /*Suggerimenti*/
 
