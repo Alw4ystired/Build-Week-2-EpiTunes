@@ -308,6 +308,14 @@ class Player {
     /* ---------- SINISTRA: cover + titolo/artista ---------- */
     const PLAYER_TRACK = creaElemento("div", "player-track d-flex align-items-center gap-3", FOOTER);
 
+    // Click sul brano in riproduzione -> apre la pagina del brano (track.html)
+    PLAYER_TRACK.setAttribute("role", "button"); // Bootstrap mostra la manina sugli elementi con role="button"
+    PLAYER_TRACK.addEventListener("click", () => {
+      if (this.currentTrack) {
+        window.location.href = `track.html?id=${this.currentTrack.id}`;
+      }
+    });
+
     const PLAYER_COVER = creaElemento("div", "player-cover rounded-1 overflow-hidden flex-shrink-0 bg-black", PLAYER_TRACK);
     const COVER_IMG = creaElemento("img", "w-100 h-100 object-fit-cover d-block", PLAYER_COVER, undefined, "player-cover-img");
     COVER_IMG.alt = "";
