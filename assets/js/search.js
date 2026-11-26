@@ -1,45 +1,45 @@
 import {
-  initPage,
+  INIT_PAGE,
   creaElemento,
-  fetchJSON,
-  bigArt,
-  debounce,
+  FETCH_JSON,
+  BIG_ART,
+  DEBOUNCE,
   Track,
   Album,
   Artist,
   API_BASE,
   STORAGE_KEY_LAST_SEARCH,
-  isFavourite,
-  toggleFavourite,
-  renderSidebarFavs,
-  cercaInfoArtista,
+  IS_FAVOURITE,
+  TOGGLE_FAVOURITE,
+  RENDER_SIDEBAR_FAVS,
+  CERCA_INFO_ARTISTA,
 } from "./common.js";
 
-const player = initPage("search");
-const input = document.querySelector("#search-input");
-const rowTracks = document.querySelector("#row-tracks");
-const rowAlbums = document.querySelector("#row-albums");
-const rowArtists = document.querySelector("#row-artists");
-const gridTracks = document.querySelector("#grid-tracks");
-const gridAlbums = document.querySelector("#grid-albums");
-const gridArtists = document.querySelector("#grid-artists");
+const PLAYER = INIT_PAGE("search");
+const INPUT = document.querySelector("#search-input");
+const ROW_TRACKS = document.querySelector("#row-tracks");
+const ROW_ALBUMS = document.querySelector("#row-albums");
+const ROW_ARTISTS = document.querySelector("#row-artists");
+const GRID_TRACKS = document.querySelector("#grid-tracks");
+const GRID_ALBUMS = document.querySelector("#grid-albums");
+const GRID_ARTISTS = document.querySelector("#grid-artists");
 
 let searchSequence = 0;
 
-const createCard = (grid, tag) => {
-  const column = creaElemento("div", "col", grid);
-  return creaElemento(tag, "card h-100 border-0", column);
+const CREATE_CARD = (grid, tag) => {
+  const COLUMN = creaElemento("div", "col", grid);
+  return creaElemento(tag, "card h-100 border-0", COLUMN);
 };
 
-const createImage = (parent, url, alt = "") => {
-  const imageWrap = creaElemento("div", "card-image-wrap", parent);
-  const image = creaElemento("img", "w-100 h-100 object-fit-cover d-block", imageWrap);
+const CREATE_IMAGE = (parent, url, alt = "") => {
+  const IMAGE_WRAP = creaElemento("div", "card-image-wrap", parent);
+  const IMAGE = creaElemento("img", "w-100 h-100 object-fit-cover d-block", IMAGE_WRAP);
 
-  image.src = url || "";
-  image.alt = alt;
-  image.loading = "lazy";
+  IMAGE.src = url || "";
+  IMAGE.alt = alt;
+  IMAGE.loading = "lazy";
 
-  return imageWrap;
+  return IMAGE_WRAP;
 };
 
 /*
@@ -55,171 +55,171 @@ const createImage = (parent, url, alt = "") => {
   - E' async ma NON la aspetto con await: le card vengono disegnate subito
     e le foto arrivano ognuna per conto suo.
 */
-const caricaFotoArtista = async (imageWrap, nome) => {
+const CARICA_FOTO_ARTISTA = async (imageWrap, nome) => {
   // cercaInfoArtista restituisce { foto, follower }: qui mi serve solo la foto.
   // ?. perche' info e' null se TheAudioDB non conosce l'artista.
-  const info = await cercaInfoArtista(nome);
-  const foto = info?.foto;
-  if (!foto) return; // niente foto: resta il 🎤
+  const INFO = await CERCA_INFO_ARTISTA(nome);
+  const FOTO = INFO?.foto;
+  if (!FOTO) return; // niente foto: resta il 🎤
 
   // Creo l'immagine SENZA genitore: non e' ancora nella pagina
-  const image = creaElemento("img", "w-100 h-100 object-fit-cover d-block");
-  image.alt = nome;
+  const IMAGE = creaElemento("img", "w-100 h-100 object-fit-cover d-block");
+  IMAGE.alt = nome;
 
   // Caricata -> sostituisco il 🎤 con la foto (replaceChildren svuota e inserisce)
-  image.addEventListener("load", () => imageWrap.replaceChildren(image), { once: true });
+  IMAGE.addEventListener("load", () => imageWrap.replaceChildren(IMAGE), { once: true });
   // /medium non disponibile -> provo l'originale (una volta sola)
-  image.addEventListener("error", () => (image.src = foto), { once: true });
+  IMAGE.addEventListener("error", () => (IMAGE.src = FOTO), { once: true });
 
-  image.src = `${foto}/medium`;
+  IMAGE.src = `${FOTO}/medium`;
 };
 
-const renderTrackCard = (rawTrack) => {
-  const track = new Track(rawTrack);
-  const card = createCard(gridTracks, "article");
+const RENDER_TRACK_CARD = (rawTrack) => {
+  const TRACK = new Track(rawTrack);
+  const CARD = CREATE_CARD(GRID_TRACKS, "article");
 
-  card.dataset.trackId = String(track.id);
+  CARD.dataset.trackId = String(TRACK.id);
 
-  createImage(card, bigArt(track.cover), track.title);
-  creaElemento("p", "card-title", card, track.title);
-  creaElemento("p", "card-sub", card, track.artist);
+  CREATE_IMAGE(CARD, BIG_ART(TRACK.cover), TRACK.title);
+  creaElemento("p", "card-title", CARD, TRACK.title);
+  creaElemento("p", "card-sub", CARD, TRACK.artist);
 
-  const giaPreferito = isFavourite(track.id);
-  const favButton = creaElemento(
+  const GIA_PREFERITO = IS_FAVOURITE(TRACK.id);
+  const FAV_BUTTON = creaElemento(
     "button",
-    giaPreferito ? "card-fav is-fav" : "card-fav",
-    card,
-    giaPreferito ? "♥" : "♡"
+    GIA_PREFERITO ? "card-fav is-fav" : "card-fav",
+    CARD,
+    GIA_PREFERITO ? "♥" : "♡"
   );
 
-  favButton.type = "button";
-  favButton.setAttribute("aria-label", `Aggiungi ${track.title} ai preferiti`);
+  FAV_BUTTON.type = "button";
+  FAV_BUTTON.setAttribute("aria-label", `Aggiungi ${TRACK.title} ai preferiti`);
 
-  favButton.addEventListener("click", (event) => {
+  FAV_BUTTON.addEventListener("click", (event) => {
     event.stopPropagation();
-    toggleFavourite(track);
+    TOGGLE_FAVOURITE(TRACK);
 
-    const ora = isFavourite(track.id);
-    favButton.classList.toggle("is-fav", ora);
-    favButton.textContent = ora ? "♥" : "♡";
+    const ORA = IS_FAVOURITE(TRACK.id);
+    FAV_BUTTON.classList.toggle("is-fav", ORA);
+    FAV_BUTTON.textContent = ORA ? "♥" : "♡";
 
-    renderSidebarFavs();
+    RENDER_SIDEBAR_FAVS();
   });
 
-  const playButton = creaElemento("button", "card-play", card, "▶");
+  const PLAY_BUTTON = creaElemento("button", "card-play", CARD, "▶");
 
-  playButton.type = "button";
-  playButton.setAttribute(
+  PLAY_BUTTON.type = "button";
+  PLAY_BUTTON.setAttribute(
     "aria-label",
-    track.previewUrl
-      ? `Riproduci ${track.title} di ${track.artist}`
-      : `Anteprima non disponibile per ${track.title}`
+    TRACK.previewUrl
+      ? `Riproduci ${TRACK.title} di ${TRACK.artist}`
+      : `Anteprima non disponibile per ${TRACK.title}`
   );
-  playButton.disabled = !track.previewUrl;
+  PLAY_BUTTON.disabled = !TRACK.previewUrl;
 
-  playButton.addEventListener("click", (event) => {
+  PLAY_BUTTON.addEventListener("click", (event) => {
     event.stopPropagation();
-    if (track.previewUrl) player.play(track);
+    if (TRACK.previewUrl) PLAYER.play(TRACK);
   });
 
-  card.addEventListener("click", (event) => {
+  CARD.addEventListener("click", (event) => {
     if (event.target.closest("button")) return;
-    if (track.previewUrl) player.play(track);
+    if (TRACK.previewUrl) PLAYER.play(TRACK);
   });
 };
 
-const renderAlbumCard = (rawAlbum) => {
-  const album = new Album(rawAlbum);
-  const card = createCard(gridAlbums, "a");
+const RENDER_ALBUM_CARD = (rawAlbum) => {
+  const ALBUM = new Album(rawAlbum);
+  const CARD = CREATE_CARD(GRID_ALBUMS, "a");
 
-  card.href = `album.html?id=${album.id}`;
+  CARD.href = `album.html?id=${ALBUM.id}`;
 
-  createImage(card, bigArt(album.cover), album.title);
-  creaElemento("p", "card-title", card, album.title);
-  creaElemento("p", "card-sub", card, album.artist);
+  CREATE_IMAGE(CARD, BIG_ART(ALBUM.cover), ALBUM.title);
+  creaElemento("p", "card-title", CARD, ALBUM.title);
+  creaElemento("p", "card-sub", CARD, ALBUM.artist);
 };
 
-const renderArtistCard = (rawArtist) => {
-  const artist = new Artist(rawArtist);
-  const card = createCard(gridArtists, "a");
-  const imageWrap = creaElemento("div", "card-image-wrap round", card);
+const RENDER_ARTIST_CARD = (rawArtist) => {
+  const ARTIST = new Artist(rawArtist);
+  const CARD = CREATE_CARD(GRID_ARTISTS, "a");
+  const IMAGE_WRAP = creaElemento("div", "card-image-wrap round", CARD);
 
-  card.href = `artist.html?id=${artist.id}`;
+  CARD.href = `artist.html?id=${ARTIST.id}`;
 
   // Il 🎤 resta come segnaposto finche' non arriva la foto
   creaElemento(
     "div",
     "w-100 h-100 d-flex align-items-center justify-content-center fs-1",
-    imageWrap,
+    IMAGE_WRAP,
     "🎤"
   );
-  creaElemento("p", "card-title", card, artist.name);
-  creaElemento("p", "card-sub", card, artist.genre || "Artista");
+  creaElemento("p", "card-title", CARD, ARTIST.name);
+  creaElemento("p", "card-sub", CARD, ARTIST.genre || "Artista");
 
   // Chiedo la foto a TheAudioDB (stessa foto della pagina artista)
-  caricaFotoArtista(imageWrap, artist.name);
+  CARICA_FOTO_ARTISTA(IMAGE_WRAP, ARTIST.name);
 };
 
-const doSearch = async (term) => {
-  const requestId = ++searchSequence;
-  const normalizedTerm = term.trim();
+const DO_SEARCH = async (term) => {
+  const REQUEST_ID = ++searchSequence;
+  const NORMALIZED_TERM = term.trim();
 
-  if (!normalizedTerm) {
-    gridTracks.replaceChildren();
-    gridAlbums.replaceChildren();
-    gridArtists.replaceChildren();
+  if (!NORMALIZED_TERM) {
+    GRID_TRACKS.replaceChildren();
+    GRID_ALBUMS.replaceChildren();
+    GRID_ARTISTS.replaceChildren();
 
-    rowTracks.hidden = true;
-    rowAlbums.hidden = true;
-    rowArtists.hidden = true;
+    ROW_TRACKS.hidden = true;
+    ROW_ALBUMS.hidden = true;
+    ROW_ARTISTS.hidden = true;
 
     localStorage.removeItem(STORAGE_KEY_LAST_SEARCH);
     return;
   }
 
-  localStorage.setItem(STORAGE_KEY_LAST_SEARCH, normalizedTerm);
+  localStorage.setItem(STORAGE_KEY_LAST_SEARCH, NORMALIZED_TERM);
 
-  const searchUrl = (entity, limit) =>
-    `${API_BASE}/search?term=${encodeURIComponent(normalizedTerm)}&entity=${entity}&limit=${limit}`;
+  const SEARCH_URL = (entity, limit) =>
+    `${API_BASE}/search?term=${encodeURIComponent(NORMALIZED_TERM)}&entity=${entity}&limit=${limit}`;
 
-  const [trackResult, albumResult, artistResult] = await Promise.allSettled([
-    fetchJSON(searchUrl("song", 12)),
-    fetchJSON(searchUrl("album", 8)),
-    fetchJSON(searchUrl("musicArtist", 8)),
+  const [TRACK_RESULT, ALBUM_RESULT, ARTIST_RESULT] = await Promise.allSettled([
+    FETCH_JSON(SEARCH_URL("song", 12)),
+    FETCH_JSON(SEARCH_URL("album", 8)),
+    FETCH_JSON(SEARCH_URL("musicArtist", 8)),
   ]);
 
-  if (requestId !== searchSequence) return;
+  if (REQUEST_ID !== searchSequence) return;
 
-  const trackData = trackResult.status === "fulfilled" ? trackResult.value : {};
-  const albumData = albumResult.status === "fulfilled" ? albumResult.value : {};
-  const artistData = artistResult.status === "fulfilled" ? artistResult.value : {};
+  const TRACK_DATA = TRACK_RESULT.status === "fulfilled" ? TRACK_RESULT.value : {};
+  const ALBUM_DATA = ALBUM_RESULT.status === "fulfilled" ? ALBUM_RESULT.value : {};
+  const ARTIST_DATA = ARTIST_RESULT.status === "fulfilled" ? ARTIST_RESULT.value : {};
 
-  gridTracks.replaceChildren();
-  gridAlbums.replaceChildren();
-  gridArtists.replaceChildren();
+  GRID_TRACKS.replaceChildren();
+  GRID_ALBUMS.replaceChildren();
+  GRID_ARTISTS.replaceChildren();
 
-  const tracks = trackData.results || [];
-  const albums = albumData.results || [];
-  const artists = artistData.results || [];
+  const TRACKS = TRACK_DATA.results || [];
+  const ALBUMS = ALBUM_DATA.results || [];
+  const ARTISTS = ARTIST_DATA.results || [];
 
-  tracks.forEach(renderTrackCard);
-  albums.forEach(renderAlbumCard);
-  artists.forEach(renderArtistCard);
+  TRACKS.forEach(RENDER_TRACK_CARD);
+  ALBUMS.forEach(RENDER_ALBUM_CARD);
+  ARTISTS.forEach(RENDER_ARTIST_CARD);
 
-  rowTracks.hidden = tracks.length === 0;
-  rowAlbums.hidden = albums.length === 0;
-  rowArtists.hidden = artists.length === 0;
+  ROW_TRACKS.hidden = TRACKS.length === 0;
+  ROW_ALBUMS.hidden = ALBUMS.length === 0;
+  ROW_ARTISTS.hidden = ARTISTS.length === 0;
 };
 
-const debouncedSearch = debounce(doSearch, 400);
+const DEBOUNCED_SEARCH = DEBOUNCE(DO_SEARCH, 400);
 
-input.addEventListener("input", (event) => {
-  debouncedSearch(event.target.value);
+INPUT.addEventListener("input", (event) => {
+  DEBOUNCED_SEARCH(event.target.value);
 });
 
-const ultimaRicerca = localStorage.getItem(STORAGE_KEY_LAST_SEARCH);
+const ULTIMA_RICERCA = localStorage.getItem(STORAGE_KEY_LAST_SEARCH);
 
-if (ultimaRicerca) {
-  input.value = ultimaRicerca;
-  doSearch(ultimaRicerca);
+if (ULTIMA_RICERCA) {
+  INPUT.value = ULTIMA_RICERCA;
+  DO_SEARCH(ULTIMA_RICERCA);
 }
