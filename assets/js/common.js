@@ -1,4 +1,3 @@
-
 /* ============================================================
    common.js — codice condiviso tra tutte le pagine
    ============================================================
@@ -19,6 +18,7 @@
    5) localStorage helpers (history, favourites)
    6) Render sidebar e player footer
    7) Inizializzazione al DOMContentLoaded
+   8) Export
 
    ESEMPIO USO DELL'ELEMENTO <audio>
    --------------------------------
@@ -60,6 +60,9 @@
 /* ============================ 1. Costanti ============================ */
 
 const API_BASE = "https://itunes.apple.com";
+// TheAudioDB: API gratuita con le foto degli artisti (iTunes non le ha).
+// "123" e' la chiave gratuita indicata nella documentazione.
+const AUDIODB_BASE = "https://www.theaudiodb.com/api/v1/json/123";
 const STORAGE_KEY_HISTORY = "epitunes_history";
 const STORAGE_KEY_FAVOURITES = "epitunes_favourites";
 const STORAGE_KEY_LAST_SEARCH = "epitunes_last_search";
@@ -110,6 +113,46 @@ const fetchJSON = async (url) => {
     // cosi' chi chiama puo' fare sempre dati.results.forEach senza controlli.
     return { results: [], resultCount: 0 };
   }
+};
+
+/*
+  cercaInfoArtista(nome)
+  - Cerca l'artista per NOME su TheAudioDB e restituisce (come Promise):
+      { foto: "https://..." oppure null, follower: 57510550 oppure null }
+    oppure null se TheAudioDB non conosce l'artista.
+  - Campi usati della risposta:
+      strArtistThumb -> foto dell'artista
+      intFollowers   -> numero di follower (arriva come STRINGA, es. "57510550")
+  - Number(...) trasforma la stringa in numero; || null copre i casi
+    in cui il campo manca o e' vuoto (Number(null) e Number("") danno 0).
+  - MEMORIA (infoArtistiCache): la chiave gratuita permette solo 30 richieste
+    al minuto. Ogni nome viene chiesto UNA volta sola: le volte dopo la
+    risposta arriva dalla Map. Salvo la Promise (non il risultato) cosi'
+    due richieste quasi contemporanee dello stesso artista ne fanno partire una.
+  - toLowerCase(): "Linkin Park" e "LINKIN PARK" sono lo stesso artista.
+*/
+const infoArtistiCache = new Map();
+
+const cercaInfoArtista = (nome) => {
+  if (!nome) return Promise.resolve(null); // nessun nome: rispondo subito "niente"
+
+  const chiave = nome.toLowerCase();
+
+  if (!infoArtistiCache.has(chiave)) {
+    const richiesta = fetchJSON(`${AUDIODB_BASE}/search.php?s=${encodeURIComponent(nome)}`)
+      .then((dati) => {
+        const trovato = dati.artists?.[0]; // ?. perche' "artists" puo' essere null
+        if (!trovato) return null; // artista non presente su TheAudioDB
+
+        return {
+          foto: trovato.strArtistThumb || null,
+          follower: Number(trovato.intFollowers) || null,
+        };
+      });
+    infoArtistiCache.set(chiave, richiesta);
+  }
+
+  return infoArtistiCache.get(chiave);
 };
 
 /*
@@ -243,6 +286,16 @@ class Player {
       this.isPlaying = false;
       if (this.el.toggle) this.el.toggle.textContent = "▶";
     });
+
+    // ⭐ MODIFICA 1 — NUOVO: se il file audio non si carica (indirizzo sbagliato,
+    // formato non supportato...) il browser lancia l'evento "error":
+    // ora lo scriviamo in console invece di ignorarlo, e rimettiamo l'icona ▶
+    this.audio.addEventListener("error", () => {
+      console.error("Audio non caricato:", this.audio.error?.message || this.audio.error?.code, this.audio.src);
+      this.isPlaying = false;
+      if (this.el.toggle) this.el.toggle.textContent = "▶";
+    });
+    // ⭐ FINE MODIFICA 1
   }
 
   mount() {
@@ -284,9 +337,26 @@ class Player {
     creaElemento("div", "progress-fill h-100", progressBar, undefined, "progress-fill");
     creaElemento("span", undefined, progress, "0:00", "time-total");
 
-    progressBar.addEventListener("click", (evento) => {
+    let staTrascinando = false;
+
+    const spostaProgress = (evento) => {
       const box = progressBar.getBoundingClientRect();
       this.seek((evento.clientX - box.left) / box.width);
+    };
+
+    progressBar.addEventListener("mousedown", (evento) => {
+      staTrascinando = true;
+      spostaProgress(evento);
+    });
+
+    document.addEventListener("mousemove", (evento) => {
+      if (staTrascinando) {
+        spostaProgress(evento);
+      }
+    });
+
+    document.addEventListener("mouseup", () => {
+      staTrascinando = false;
     });
 
     /* ---------- DESTRA: volume ---------- */
@@ -294,11 +364,28 @@ class Player {
     creaElemento("span", undefined, playerRight, "🔊");
     const volumeBar = creaElemento("div", "volume-bar", playerRight, undefined, "volume-bar");
     creaElemento("div", "volume-fill h-100", volumeBar, undefined, "volume-fill");
-    volumeBar.addEventListener("click", (evento) => {
+    
+    let staTrascinandoVolume = false;
+
+    const spostaVolume = (evento) => {
       const box = volumeBar.getBoundingClientRect();
       this.setVolume((evento.clientX - box.left) / box.width);
+    };
+
+    volumeBar.addEventListener("mousedown", (evento) => {
+      staTrascinandoVolume = true;
+      spostaVolume(evento);
     });
 
+    document.addEventListener("mousemove", (evento) => {
+      if (staTrascinandoVolume) {
+        spostaVolume(evento);
+      }
+    });
+
+    document.addEventListener("mouseup", () => {
+      staTrascinandoVolume = false;
+    });
     /* ---------- riferimenti agli elementi, ora che esistono ---------- */
     this.el = {
       cover: document.querySelector("#player-cover-img"),
@@ -321,7 +408,13 @@ class Player {
     this.currentTrack = track;
     this.isPlaying = true;
     this.audio.src = track.previewUrl;
-    this.audio.play().catch(() => (this.isPlaying = false));
+
+    this.audio.play().catch((errore) => {
+      console.error("Riproduzione fallita:", errore.name, errore.message);
+      this.isPlaying = false;
+      if (this.el.toggle) this.el.toggle.textContent = "▶";
+    });
+
 
     addToHistory(track);
 
@@ -342,7 +435,11 @@ class Player {
     if (!this.currentTrack) return;
 
     if (this.audio.paused) {
-      this.audio.play().catch(() => {});
+      this.audio.play().catch((errore) => {
+        console.error("Riproduzione fallita:", errore.name, errore.message);
+        this.isPlaying = false;
+        if (this.el.toggle) this.el.toggle.textContent = "▶";
+      });
       this.isPlaying = true;
     } else {
       this.audio.pause();
@@ -517,7 +614,6 @@ const initPage = (activePage) => {
   return player;
 };
 
-
 /* ============================ 8. Export ============================ */
 
 export {
@@ -530,6 +626,7 @@ export {
   bigArt,
   formatTime,
   debounce,
+  cercaInfoArtista,
   // Classi
   Track,
   Album,
@@ -545,4 +642,4 @@ export {
   renderSidebarFavs,
   // Inizializzazione
   initPage,
-}
+};

@@ -6,7 +6,7 @@ import {
   isFavourite,
   getHistory,
   renderSidebarFavs,
-  
+
   creaElemento,
   fetchJSON,
   bigArt,
@@ -24,7 +24,7 @@ import {
         - "I tuoi preferiti"       (da getFavourites()) -- mostra solo se non vuota
         - "Suggerimenti pop"       (fetch search term=pop entity=song limit=12)
         - "Suggerimenti rock"      (fetch search term=rock entity=song limit=12)
-        - "Suggerimenti hits"   (fetch search term=hits pop entity=song limit=12)
+        - "Suggerimenti hits"      (fetch search term=hits pop entity=song limit=12)
    3) Le tre fetch dei suggerimenti vanno in PARALLELO con Promise.all
    4) Ogni card è una Track: cover, titolo, artista, button play, button cuore (favourite)
    5) Click card -> window.player.play(track)
@@ -89,8 +89,7 @@ const renderRow = (rowTitle, tracks, idSezione) => {
     favButton.type = "button";
     favButton.setAttribute(
       "aria-label",
-      `${giaPreferito ? "Rimuovi" : "Aggiungi"} ${track.title} ${
-        giaPreferito ? "dai" : "ai"
+      `${giaPreferito ? "Rimuovi" : "Aggiungi"} ${track.title} ${giaPreferito ? "dai" : "ai"
       } preferiti`
     );
     //clicco dei favoriti 
@@ -103,7 +102,8 @@ const renderRow = (rowTitle, tracks, idSezione) => {
       favButton.classList.toggle("is-fav", ora);
       favButton.textContent = ora ? "♥" : "♡";
       renderSidebarFavs(); // aggiorno anche la lista nella sidebar
-      AGGIORNA_PREFERITI(); 
+      AGGIORNA_CUORI(track);
+      AGGIORNA_PREFERITI();
     });
 
     // Bottone play
@@ -138,7 +138,7 @@ const renderRow = (rowTitle, tracks, idSezione) => {
 
 const AGGIORNA_PREFERITI = () => {
   const VECCHIA = document.querySelector("#sezione-preferiti")
-  if (VECCHIA){
+  if (VECCHIA) {
     VECCHIA.remove();
   }
 
@@ -150,6 +150,22 @@ const AGGIORNA_PREFERITI = () => {
   }
 }
 
+const AGGIORNA_CUORI = (track) => {
+  const ORA = isFavourite(track.id);
+  const CARTE = document.querySelectorAll(`[data-track-id="${track.id}"]`);
+
+  CARTE.forEach((carta) => {
+    const CUORE = carta.querySelector(".card-fav");
+
+    CUORE.classList.toggle("is-fav", ORA);
+    if(ORA) {
+      CUORE.textContent = "♥";
+    } else {
+      CUORE.textContent = "♡";
+    }
+  });
+}
+
 /* ---------- I tuoi preferiti ---------- */
 
 const preferiti = getFavourites(); // array di brani salvati in localStorage
@@ -159,9 +175,6 @@ renderRow("I tuoi preferiti", preferiti, "sezione-preferiti"); // se è vuoto, r
 /*Riprodotti di recente*/
 renderRow("Riprodotti di recente", getHistory());
 
-/*I tuoi preferiti*/
-renderRow("I tuoi preferiti", getFavourites());
-
 
 /*Suggerimenti*/
 
@@ -170,7 +183,7 @@ const caricaSuggerimenti = async (termine) => {
     const url = `https://itunes.apple.com/search?term=${encodeURIComponent(termine)}&entity=song&limit=12`;
     const dati = await fetchJSON(url);// fa la richiesta e trasforma la risposta in un oggetto JS
     const brani = dati.results.map((raw) => new Track(raw));// da ogni risultato "grezzo" dell'API crea un oggetto Track, in un nuovo array
-    
+
     brani.sort(() => Math.random() - 0.5);//album radom
     return brani.slice(0, 6);
 
@@ -209,10 +222,3 @@ const loadHome = async () => {
 };
 
 loadHome();
-
-
-
-
-
-
-
