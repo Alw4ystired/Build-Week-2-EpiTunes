@@ -285,9 +285,10 @@ class Player {
     this.audio.addEventListener("ended", () => {
       this.isPlaying = false;
       if (this.el.toggle) this.el.toggle.textContent = "▶";
+      aggiornaSidebarPlay();
     });
 
-    // ⭐ MODIFICA 1 — NUOVO: se il file audio non si carica (indirizzo sbagliato,
+    // Se il file audio non si carica (indirizzo sbagliato,
     // formato non supportato...) il browser lancia l'evento "error":
     // ora lo scriviamo in console invece di ignorarlo, e rimettiamo l'icona ▶
     this.audio.addEventListener("error", () => {
@@ -295,7 +296,7 @@ class Player {
       this.isPlaying = false;
       if (this.el.toggle) this.el.toggle.textContent = "▶";
     });
-    // ⭐ FINE MODIFICA 1
+    //
   }
 
   mount() {
@@ -364,7 +365,7 @@ class Player {
     creaElemento("span", undefined, playerRight, "🔊");
     const volumeBar = creaElemento("div", "volume-bar", playerRight, undefined, "volume-bar");
     creaElemento("div", "volume-fill h-100", volumeBar, undefined, "volume-fill");
-    
+
     let staTrascinandoVolume = false;
 
     const spostaVolume = (evento) => {
@@ -429,6 +430,7 @@ class Player {
 
     document.querySelector(".track-row.is-playing")?.classList.remove("is-playing");
     document.querySelector(`.track-row[data-track-id="${track.id}"]`)?.classList.add("is-playing");
+    aggiornaSidebarPlay();
   }
 
   togglePlay() {
@@ -447,6 +449,7 @@ class Player {
     }
 
     if (this.el.toggle) this.el.toggle.textContent = this.isPlaying ? "⏸" : "▶";
+    aggiornaSidebarPlay();
   }
 
   setVolume(v) {
@@ -595,7 +598,46 @@ const renderSidebarFavs = () => {
   }
 
   preferiti.forEach((track) => {
-    creaElemento("li", "text-truncate rounded-1", lista, track.title);
+    const riga = creaElemento("li", "text-truncate rounded-1", lista, track.title);
+    riga.dataset.trackId = String(track.id);
+
+    const bottone = creaElemento("button", "sidebar-play", riga, "▶");
+    bottone.type = "button";
+    bottone.setAttribute("aria-label", `Riproduci o metti in pausa ${track.title}`);
+
+    bottone.addEventListener("click", () => {
+      const player = window.player;
+      if (player.currentTrack && player.currentTrack.id === track.id) {
+        player.togglePlay();
+      } else {
+        player.play(track);
+      }
+    });
+  });
+
+  aggiornaSidebarPlay();
+};
+
+const aggiornaSidebarPlay = () => {
+  const player = window.player;
+  const righe = document.querySelectorAll("#sidebar-favs li");
+
+  righe.forEach((riga) => {
+    const bottone = riga.querySelector(".sidebar-play");
+    if (!bottone) return; // la riga "Nessun preferito" non ha il bottone
+
+    let inRiproduzione = false;
+    if (player && player.currentTrack && String(player.currentTrack.id) === riga.dataset.trackId) {
+      inRiproduzione = true;
+    }
+
+    riga.classList.toggle("is-playing", inRiproduzione);
+
+    if (inRiproduzione && player.isPlaying) {
+      bottone.textContent = "⏸";
+    } else {
+      bottone.textContent = "▶";
+    }
   });
 };
 
