@@ -337,9 +337,26 @@ class Player {
     creaElemento("div", "progress-fill h-100", progressBar, undefined, "progress-fill");
     creaElemento("span", undefined, progress, "0:00", "time-total");
 
-    progressBar.addEventListener("click", (evento) => {
+    let staTrascinando = false;
+
+    const spostaProgress = (evento) => {
       const box = progressBar.getBoundingClientRect();
       this.seek((evento.clientX - box.left) / box.width);
+    };
+
+    progressBar.addEventListener("mousedown", (evento) => {
+      staTrascinando = true;
+      spostaProgress(evento);
+    });
+
+    document.addEventListener("mousemove", (evento) => {
+      if (staTrascinando) {
+        spostaProgress(evento);
+      }
+    });
+
+    document.addEventListener("mouseup", () => {
+      staTrascinando = false;
     });
 
     /* ---------- DESTRA: volume ---------- */
@@ -347,11 +364,28 @@ class Player {
     creaElemento("span", undefined, playerRight, "🔊");
     const volumeBar = creaElemento("div", "volume-bar", playerRight, undefined, "volume-bar");
     creaElemento("div", "volume-fill h-100", volumeBar, undefined, "volume-fill");
-    volumeBar.addEventListener("click", (evento) => {
+    
+    let staTrascinandoVolume = false;
+
+    const spostaVolume = (evento) => {
       const box = volumeBar.getBoundingClientRect();
       this.setVolume((evento.clientX - box.left) / box.width);
+    };
+
+    volumeBar.addEventListener("mousedown", (evento) => {
+      staTrascinandoVolume = true;
+      spostaVolume(evento);
     });
 
+    document.addEventListener("mousemove", (evento) => {
+      if (staTrascinandoVolume) {
+        spostaVolume(evento);
+      }
+    });
+
+    document.addEventListener("mouseup", () => {
+      staTrascinandoVolume = false;
+    });
     /* ---------- riferimenti agli elementi, ora che esistono ---------- */
     this.el = {
       cover: document.querySelector("#player-cover-img"),
