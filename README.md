@@ -144,7 +144,7 @@ Le attività sono distribuite per giorno sulla bacheca del gruppo, dove vengono 
 - [x] Player audio: play, pausa, barra di avanzamento, volume
 - [x] Home: suggerimenti, preferiti e riprodotti di recente
 - [x] Pagina album con tracklist e cuori sincronizzati
-- [ ] Pagina artista
+- [x] Pagina artista
 - [ ] Adattamento mobile-first dei breakpoint
 - [ ] Home: suggerimenti a 12 card
 - [ ] Pubblicazione su GitHub Pages
