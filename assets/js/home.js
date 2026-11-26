@@ -6,6 +6,7 @@ import {
   IS_FAVOURITE,
   GET_HISTORY,
   RENDER_SIDEBAR_FAVS,
+  AGGIORNA_CARD_PLAY,
 
   creaElemento,
   FETCH_JSON,
@@ -133,6 +134,7 @@ const RENDER_ROW = (rowTitle, tracks, idSezione) => {
     });
   });
 
+  AGGIORNA_CARD_PLAY(); // le card nuove partono con l'icona giusta (▶ o ⏸)
   return SECTION;
 };
 

@@ -13,6 +13,7 @@ import {
   TOGGLE_FAVOURITE,
   RENDER_SIDEBAR_FAVS,
   CERCA_INFO_ARTISTA,
+  AGGIORNA_CARD_PLAY,
 } from "./common.js";
 
 const PLAYER = INIT_PAGE("search");
@@ -203,6 +204,7 @@ const DO_SEARCH = async (term) => {
   const ARTISTS = ARTIST_DATA.results || [];
 
   TRACKS.forEach(RENDER_TRACK_CARD);
+  AGGIORNA_CARD_PLAY(); // le card nuove partono con l'icona giusta (▶ o ⏸)
   ALBUMS.forEach(RENDER_ALBUM_CARD);
   ARTISTS.forEach(RENDER_ARTIST_CARD);
 

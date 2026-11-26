@@ -66,6 +66,7 @@ const AUDIODB_BASE = "https://www.theaudiodb.com/api/v1/json/123";
 const STORAGE_KEY_HISTORY = "epitunes_history";
 const STORAGE_KEY_FAVOURITES = "epitunes_favourites";
 const STORAGE_KEY_LAST_SEARCH = "epitunes_last_search";
+const STORAGE_KEY_PLAYER = "epitunes_player"; // brano in riproduzione + secondo a cui era arrivato
 const MAX_HISTORY = 12;
 
 /* ============================ 2. Helpers ============================ */
@@ -274,6 +275,7 @@ class Player {
     this.audio = document.querySelector("#audio-element");
     this.currentTrack = null;
     this.isPlaying = false;
+    this.inAttesa = false; // true = deve ripartire al primo click (vedi ripristina)
     this.el = {}; // lo riempie mount(), quando il footer esiste davvero
 
     this.audio.addEventListener("timeupdate", () => {
@@ -296,7 +298,97 @@ class Player {
       this.isPlaying = false;
       if (this.el.toggle) this.el.toggle.textContent = "▶";
     });
-    //
+
+    // Quando la pagina sta per chiudersi (anche cliccando un link, es. il brano
+    // in basso a sinistra) salvo brano + secondo + play/pausa: la pagina dopo riparte da li'
+    window.addEventListener("pagehide", () => this.salvaStato());
+
+    // Ogni volta che l'audio parte o si ferma (da qualunque pulsante) aggiorno
+    // le icone ▶/⏸ della sidebar e delle card
+    this.audio.addEventListener("play", () => AGGIORNA_SIDEBAR_PLAY());
+    this.audio.addEventListener("pause", () => AGGIORNA_SIDEBAR_PLAY());
+  }
+
+  /*
+    salvaStato()
+    - Scrive in localStorage il brano corrente, il secondo a cui e' arrivato
+      e se stava suonando. localStorage salva solo stringhe: JSON.stringify.
+  */
+  salvaStato() {
+    if (!this.currentTrack) return; // niente brano: non sovrascrivo il salvataggio vecchio
+
+    const STATO = {
+      track: this.currentTrack,
+      time: this.audio.currentTime,
+      playing: this.isPlaying || this.inAttesa, // inAttesa = doveva suonare ma il browser ha bloccato
+    };
+    localStorage.setItem(STORAGE_KEY_PLAYER, JSON.stringify(STATO));
+  }
+
+  /*
+    ripristina()
+    - Chiamata alla fine di mount(): rilegge il salvataggio e rimette il player
+      com'era (titolo, cover, tempo). Se stava suonando prova a ripartire.
+    - Il browser puo' bloccare la ripartenza automatica: in quel caso resta in
+      pausa (icona ▶) e basta un click su play.
+  */
+  ripristina() {
+    let STATO = null;
+    try {
+      STATO = JSON.parse(localStorage.getItem(STORAGE_KEY_PLAYER));
+    } catch (errore) {
+      return; // dati rovinati: ignoro
+    }
+    if (!STATO || !STATO.track || !STATO.track.previewUrl) return; // niente salvato
+
+    this.currentTrack = STATO.track;
+    this.audio.src = STATO.track.previewUrl;
+
+    this.el.cover.src = STATO.track.cover;
+    this.el.cover.alt = STATO.track.title;
+    this.el.titolo.textContent = STATO.track.title;
+    this.el.artista.textContent = STATO.track.artist;
+    this.el.tempoTotale.textContent = FORMAT_TIME(STATO.track.durationMs);
+
+    // Il secondo si puo' impostare solo quando il browser conosce la durata
+    this.audio.addEventListener(
+      "loadedmetadata",
+      () => {
+        this.audio.currentTime = STATO.time;
+      },
+      { once: true }
+    );
+
+    if (STATO.playing) {
+      this.audio
+        .play()
+        .then(() => {
+          this.isPlaying = true;
+          this.el.toggle.textContent = "⏸";
+          AGGIORNA_SIDEBAR_PLAY();
+        })
+        .catch(() => {
+          // Il browser blocca l'audio che parte da solo (serve un click dell'utente).
+          // Allora resto in pausa e riparto al PRIMO click ovunque nella pagina.
+          this.isPlaying = false;
+          this.inAttesa = true;
+
+          document.addEventListener(
+            "click",
+            () => {
+              // inAttesa e' tornato false se l'utente ha gia' usato un pulsante play: non faccio niente
+              if (this.inAttesa && this.audio.paused) {
+                this.isPlaying = true;
+                this.audio.play().catch(() => {});
+                this.el.toggle.textContent = "⏸";
+                AGGIORNA_SIDEBAR_PLAY();
+              }
+              this.inAttesa = false;
+            },
+            { once: true }
+          );
+        });
+    }
   }
 
   mount() {
@@ -414,10 +506,20 @@ class Player {
 
     this.el.toggle.addEventListener("click", () => this.togglePlay());
     this.setVolume(0.5);
+    this.ripristina(); // se c'era un brano in riproduzione nella pagina prima, lo rimetto
   }
 
   play(track) {
     if (!track || !track.previewUrl) return;
+
+    this.inAttesa = false; // l'utente ha scelto lui cosa suonare
+
+    // Stesso brano gia' caricato: non lo faccio ripartire da capo,
+    // faccio play/pausa (cosi' il secondo click su un brano lo mette in pausa)
+    if (this.currentTrack && this.currentTrack.id === track.id) {
+      this.togglePlay();
+      return;
+    }
 
     this.currentTrack = track;
     this.isPlaying = true;
@@ -448,6 +550,8 @@ class Player {
 
   togglePlay() {
     if (!this.currentTrack) return;
+
+    this.inAttesa = false; // l'utente ha premuto play/pausa lui
 
     if (this.audio.paused) {
       this.audio.play().catch((errore) => {
@@ -556,6 +660,16 @@ const TOGGLE_FAVOURITE = (track) => {
 /* ============================ 6. Render sidebar e bottoni ============================ */
 
 /*
+  LINKS_NAV
+  - Le pagine principali: le usano sia la sidebar (da 576px in su)
+    sia i bottoncini nella topbar (sotto i 576px).
+*/
+const LINKS_NAV = [
+  { href: "index.html", page: "home", ico: "🏠", text: "Home" },
+  { href: "search.html", page: "search", ico: "🔍", text: "Cerca" },
+];
+
+/*
   renderSidebar(activePage)
   - activePage: "home" | "search" | "library" (per evidenziare il link attivo)
 */
@@ -572,11 +686,7 @@ const RENDER_SIDEBAR = (activePage) => {
 
   /* ---------- Navigazione ---------- */
   const NAV = creaElemento("nav", "sidebar-nav d-flex flex-column gap-1 mb-4", SIDEBAR);
-  const LINKS = [
-    { href: "index.html", page: "home", ico: "🏠", text: "Home" },
-    { href: "search.html", page: "search", ico: "🔍", text: "Cerca" },
-  ];
-  LINKS.forEach(({ href, page, ico, text }) => {
+  LINKS_NAV.forEach(({ href, page, ico, text }) => {
     const CLASSE_ATTIVA = activePage === page ? " active" : "";
     const A = creaElemento("a", `d-flex align-items-center justify-content-center justify-content-lg-start gap-3 px-0 px-lg-3 py-2 rounded-2 fw-semibold${CLASSE_ATTIVA}`, NAV);
     A.href = href;
@@ -590,6 +700,30 @@ const RENDER_SIDEBAR = (activePage) => {
   creaElemento("ul", "sidebar-list d-none d-lg-flex flex-column gap-1 list-unstyled m-0 px-1", SIDEBAR, undefined, "sidebar-favs");
 
   RENDER_SIDEBAR_FAVS();
+};
+
+/*
+  renderNavMobile()
+  - Sotto i 576px la sidebar sparisce: Home e Cerca diventano due
+    bottoncini tondi nella topbar, accanto alle frecce ‹ ›.
+  - d-sm-none (Bootstrap) = nascosti da 576px in su, dove c'e' la sidebar.
+  - Stesse classi delle frecce (nav-btn rounded-circle...): stessa grandezza e stile.
+  - d-flex + align/justify-content-center centrano l'icona dentro il cerchio.
+*/
+const RENDER_NAV_MOBILE = () => {
+  const TOPBAR_NAV = document.querySelector(".topbar-nav");
+  if (!TOPBAR_NAV) return;
+
+  LINKS_NAV.forEach(({ href, ico, text }) => {
+    const A = creaElemento(
+      "a",
+      "nav-btn rounded-circle border-0 lh-1 d-flex d-sm-none align-items-center justify-content-center",
+      TOPBAR_NAV,
+      ico
+    );
+    A.href = href;
+    A.setAttribute("aria-label", text);
+  });
 };
 
 /*
@@ -631,7 +765,34 @@ const RENDER_SIDEBAR_FAVS = () => {
   AGGIORNA_SIDEBAR_PLAY();
 };
 
+/*
+  AGGIORNA_CARD_PLAY()
+  - Mette ⏸ sul pulsante verde della card del brano che sta suonando,
+    ▶ su tutte le altre (e anche su quella in pausa).
+  - Va richiamata anche dopo aver disegnato nuove card (home e ricerca).
+*/
+const AGGIORNA_CARD_PLAY = () => {
+  const PLAYER = window.player;
+
+  document.querySelectorAll(".card-play").forEach((bottone) => {
+    const CARD = bottone.closest(".card");
+
+    let inRiproduzione = false;
+    if (PLAYER && PLAYER.currentTrack && PLAYER.isPlaying && CARD && CARD.dataset.trackId === String(PLAYER.currentTrack.id)) {
+      inRiproduzione = true;
+    }
+
+    if (inRiproduzione) {
+      bottone.textContent = "⏸";
+    } else {
+      bottone.textContent = "▶";
+    }
+  });
+};
+
 const AGGIORNA_SIDEBAR_PLAY = () => {
+  AGGIORNA_CARD_PLAY(); // stesso momento: aggiorno anche le card
+
   const PLAYER = window.player;
   const RIGHE = document.querySelectorAll("#sidebar-favs li");
 
@@ -708,10 +869,12 @@ const attivaFrecce = () => {
 */
 const INIT_PAGE = (activePage) => {
   RENDER_SIDEBAR(activePage);
-   attivaFrecce();
+  RENDER_NAV_MOBILE();
+  attivaFrecce();
   const PLAYER = new Player();
   PLAYER.mount();
   window.player = PLAYER;
+  AGGIORNA_SIDEBAR_PLAY(); // ora window.player esiste: evidenzio il preferito in riproduzione
   return PLAYER;
 };
 
@@ -741,6 +904,7 @@ export {
   TOGGLE_FAVOURITE,
   // Render
   RENDER_SIDEBAR_FAVS,
+  AGGIORNA_CARD_PLAY,
   // Inizializzazione
   INIT_PAGE,
 };
