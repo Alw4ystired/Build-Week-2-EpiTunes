@@ -12,6 +12,7 @@ import {
   isFavourite,
   toggleFavourite,
   renderSidebarFavs,
+  cercaInfoArtista,
 } from "./common.js";
 
 const player = initPage("search");
@@ -39,6 +40,38 @@ const createImage = (parent, url, alt = "") => {
   image.loading = "lazy";
 
   return imageWrap;
+};
+
+/*
+  caricaFotoArtista(imageWrap, nome)
+  - Cerca la foto dell'artista su TheAudioDB e, se c'e', la mette nel cerchio
+    della card AL POSTO del 🎤.
+  - Il 🎤 resta finche' la foto non e' caricata del tutto (evento "load"):
+    solo allora sostituisco il contenuto del cerchio. Cosi' non si vede mai
+    un cerchio vuoto o un'immagine a meta'.
+  - Prima provo la versione /medium (piu' leggera); se non si carica,
+    ripiego UNA volta sulla foto originale ({ once: true }).
+  - Se TheAudioDB non ha l'artista, o entrambe le foto falliscono, resta il 🎤.
+  - E' async ma NON la aspetto con await: le card vengono disegnate subito
+    e le foto arrivano ognuna per conto suo.
+*/
+const caricaFotoArtista = async (imageWrap, nome) => {
+  // cercaInfoArtista restituisce { foto, follower }: qui mi serve solo la foto.
+  // ?. perche' info e' null se TheAudioDB non conosce l'artista.
+  const info = await cercaInfoArtista(nome);
+  const foto = info?.foto;
+  if (!foto) return; // niente foto: resta il 🎤
+
+  // Creo l'immagine SENZA genitore: non e' ancora nella pagina
+  const image = creaElemento("img", "w-100 h-100 object-fit-cover d-block");
+  image.alt = nome;
+
+  // Caricata -> sostituisco il 🎤 con la foto (replaceChildren svuota e inserisce)
+  image.addEventListener("load", () => imageWrap.replaceChildren(image), { once: true });
+  // /medium non disponibile -> provo l'originale (una volta sola)
+  image.addEventListener("error", () => (image.src = foto), { once: true });
+
+  image.src = `${foto}/medium`;
 };
 
 const renderTrackCard = (rawTrack) => {
@@ -113,6 +146,7 @@ const renderArtistCard = (rawArtist) => {
 
   card.href = `artist.html?id=${artist.id}`;
 
+  // Il 🎤 resta come segnaposto finche' non arriva la foto
   creaElemento(
     "div",
     "w-100 h-100 d-flex align-items-center justify-content-center fs-1",
@@ -121,6 +155,9 @@ const renderArtistCard = (rawArtist) => {
   );
   creaElemento("p", "card-title", card, artist.name);
   creaElemento("p", "card-sub", card, artist.genre || "Artista");
+
+  // Chiedo la foto a TheAudioDB (stessa foto della pagina artista)
+  caricaFotoArtista(imageWrap, artist.name);
 };
 
 const doSearch = async (term) => {

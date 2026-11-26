@@ -60,6 +60,9 @@
 /* ============================ 1. Costanti ============================ */
 
 const API_BASE = "https://itunes.apple.com";
+// TheAudioDB: API gratuita con le foto degli artisti (iTunes non le ha).
+// "123" e' la chiave gratuita indicata nella documentazione.
+const AUDIODB_BASE = "https://www.theaudiodb.com/api/v1/json/123";
 const STORAGE_KEY_HISTORY = "epitunes_history";
 const STORAGE_KEY_FAVOURITES = "epitunes_favourites";
 const STORAGE_KEY_LAST_SEARCH = "epitunes_last_search";
@@ -110,6 +113,46 @@ const fetchJSON = async (url) => {
     // cosi' chi chiama puo' fare sempre dati.results.forEach senza controlli.
     return { results: [], resultCount: 0 };
   }
+};
+
+/*
+  cercaInfoArtista(nome)
+  - Cerca l'artista per NOME su TheAudioDB e restituisce (come Promise):
+      { foto: "https://..." oppure null, follower: 57510550 oppure null }
+    oppure null se TheAudioDB non conosce l'artista.
+  - Campi usati della risposta:
+      strArtistThumb -> foto dell'artista
+      intFollowers   -> numero di follower (arriva come STRINGA, es. "57510550")
+  - Number(...) trasforma la stringa in numero; || null copre i casi
+    in cui il campo manca o e' vuoto (Number(null) e Number("") danno 0).
+  - MEMORIA (infoArtistiCache): la chiave gratuita permette solo 30 richieste
+    al minuto. Ogni nome viene chiesto UNA volta sola: le volte dopo la
+    risposta arriva dalla Map. Salvo la Promise (non il risultato) cosi'
+    due richieste quasi contemporanee dello stesso artista ne fanno partire una.
+  - toLowerCase(): "Linkin Park" e "LINKIN PARK" sono lo stesso artista.
+*/
+const infoArtistiCache = new Map();
+
+const cercaInfoArtista = (nome) => {
+  if (!nome) return Promise.resolve(null); // nessun nome: rispondo subito "niente"
+
+  const chiave = nome.toLowerCase();
+
+  if (!infoArtistiCache.has(chiave)) {
+    const richiesta = fetchJSON(`${AUDIODB_BASE}/search.php?s=${encodeURIComponent(nome)}`)
+      .then((dati) => {
+        const trovato = dati.artists?.[0]; // ?. perche' "artists" puo' essere null
+        if (!trovato) return null; // artista non presente su TheAudioDB
+
+        return {
+          foto: trovato.strArtistThumb || null,
+          follower: Number(trovato.intFollowers) || null,
+        };
+      });
+    infoArtistiCache.set(chiave, richiesta);
+  }
+
+  return infoArtistiCache.get(chiave);
 };
 
 /*
@@ -332,15 +375,12 @@ class Player {
     this.isPlaying = true;
     this.audio.src = track.previewUrl;
 
-    // ⭐ MODIFICA 2 — PRIMA era: this.audio.play().catch(() => (this.isPlaying = false));
-    // L'errore veniva buttato via senza scriverlo da nessuna parte (errore silenzioso).
-    // Ora lo scriviamo in console e rimettiamo l'icona ▶ coerente con lo stato.
     this.audio.play().catch((errore) => {
       console.error("Riproduzione fallita:", errore.name, errore.message);
       this.isPlaying = false;
       if (this.el.toggle) this.el.toggle.textContent = "▶";
     });
-    // ⭐ FINE MODIFICA 2
+
 
     addToHistory(track);
 
@@ -361,14 +401,11 @@ class Player {
     if (!this.currentTrack) return;
 
     if (this.audio.paused) {
-      // ⭐ MODIFICA 3 — PRIMA era: this.audio.play().catch(() => {});
-      // Stesso problema della modifica 2: ora l'errore va in console e l'icona torna ▶
       this.audio.play().catch((errore) => {
         console.error("Riproduzione fallita:", errore.name, errore.message);
         this.isPlaying = false;
         if (this.el.toggle) this.el.toggle.textContent = "▶";
       });
-      // ⭐ FINE MODIFICA 3
       this.isPlaying = true;
     } else {
       this.audio.pause();
@@ -555,6 +592,7 @@ export {
   bigArt,
   formatTime,
   debounce,
+  cercaInfoArtista,
   // Classi
   Track,
   Album,
