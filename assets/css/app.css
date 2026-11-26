@@ -701,3 +701,37 @@ button {
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   }
 }
+
+.sidebar-list li {
+  position: relative;
+}
+
+.sidebar-play {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--success);
+  color: #000;
+  border: none;
+  font-size: 10px;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.sidebar-list li:hover .sidebar-play {
+  opacity: 1;
+}
+
+.sidebar-list li.is-playing {
+  color: var(--success);
+}
+
+.sidebar-list li.is-playing .sidebar-play {
+  opacity: 1;
+}

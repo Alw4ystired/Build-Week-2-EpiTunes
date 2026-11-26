@@ -79,14 +79,14 @@ Serve a non ripetere ogni volta le stesse righe, e per usare solo createElement 
 */
 
 function creaElemento(tag, classe, genitore, testo, id) {
-  const elemento = document.createElement(tag); // crea il nodo, per ora staccato dalla pagina
+  const ELEMENTO = document.createElement(tag); // crea il nodo, per ora staccato dalla pagina
 
-  if (classe) elemento.className = classe; // salta se non passiamo la classe (undefined o "")
-  if (testo !== undefined) elemento.textContent = testo; // !== undefined perche' lo 0 e la stringa vuota sono testi validi
-  if (id) elemento.id = id; // serve dove il CSS o il JS cercano l'elemento per id
-  if (genitore) genitore.appendChild(elemento); // solo qui l'elemento entra davvero nella pagina
+  if (classe) ELEMENTO.className = classe; // salta se non passiamo la classe (undefined o "")
+  if (testo !== undefined) ELEMENTO.textContent = testo; // !== undefined perche' lo 0 e la stringa vuota sono testi validi
+  if (id) ELEMENTO.id = id; // serve dove il CSS o il JS cercano l'elemento per id
+  if (genitore) genitore.appendChild(ELEMENTO); // solo qui l'elemento entra davvero nella pagina
 
-  return elemento; // lo restituiamo per poterlo riusare dopo
+  return ELEMENTO; // lo restituiamo per poterlo riusare dopo
 }
 
 /*
@@ -96,15 +96,15 @@ function creaElemento(tag, classe, genitore, testo, id) {
   - In caso di errore ritorna { results: [], resultCount: 0 } per semplificare i chiamanti
 */
 
-const fetchJSON = async (url) => {
+const FETCH_JSON = async (url) => {
   try {
-    const risposta = await fetch(url);
+    const RISPOSTA = await fetch(url);
     // fetch NON lancia errore sugli stati HTTP: un 404 o un 500 arrivano qui
     // come risposte normali. Siamo noi a doverli trasformare in errori.
-    if (!risposta.ok) {
-      throw new Error(`Richiesta fallita: ${risposta.status} ${risposta.statusText}`);
+    if (!RISPOSTA.ok) {
+      throw new Error(`Richiesta fallita: ${RISPOSTA.status} ${RISPOSTA.statusText}`);
     }
-    return await risposta.json();
+    return await RISPOSTA.json();
   } catch (errore) {
     // Finisce qui sia l'errore lanciato sopra, sia quelli di rete
     // (host irraggiungibile, connessione assente, JSON malformato).
@@ -131,28 +131,28 @@ const fetchJSON = async (url) => {
     due richieste quasi contemporanee dello stesso artista ne fanno partire una.
   - toLowerCase(): "Linkin Park" e "LINKIN PARK" sono lo stesso artista.
 */
-const infoArtistiCache = new Map();
+const INFO_ARTISTI_CACHE = new Map();
 
-const cercaInfoArtista = (nome) => {
+const CERCA_INFO_ARTISTA = (nome) => {
   if (!nome) return Promise.resolve(null); // nessun nome: rispondo subito "niente"
 
-  const chiave = nome.toLowerCase();
+  const CHIAVE = nome.toLowerCase();
 
-  if (!infoArtistiCache.has(chiave)) {
-    const richiesta = fetchJSON(`${AUDIODB_BASE}/search.php?s=${encodeURIComponent(nome)}`)
+  if (!INFO_ARTISTI_CACHE.has(CHIAVE)) {
+    const RICHIESTA = FETCH_JSON(`${AUDIODB_BASE}/search.php?s=${encodeURIComponent(nome)}`)
       .then((dati) => {
-        const trovato = dati.artists?.[0]; // ?. perche' "artists" puo' essere null
-        if (!trovato) return null; // artista non presente su TheAudioDB
+        const TROVATO = dati.artists?.[0]; // ?. perche' "artists" puo' essere null
+        if (!TROVATO) return null; // artista non presente su TheAudioDB
 
         return {
-          foto: trovato.strArtistThumb || null,
-          follower: Number(trovato.intFollowers) || null,
+          foto: TROVATO.strArtistThumb || null,
+          follower: Number(TROVATO.intFollowers) || null,
         };
       });
-    infoArtistiCache.set(chiave, richiesta);
+    INFO_ARTISTI_CACHE.set(CHIAVE, RICHIESTA);
   }
 
-  return infoArtistiCache.get(chiave);
+  return INFO_ARTISTI_CACHE.get(CHIAVE);
 };
 
 /*
@@ -160,7 +160,7 @@ const cercaInfoArtista = (nome) => {
   - L'API iTunes ritorna artwork 100x100 (artworkUrl100)
   - Sostituisce "100x100bb" con "600x600bb" per avere una cover più grande
 */
-const bigArt = (url) => {
+const BIG_ART = (url) => {
   if (!url) return "";
   return url.replace("100x100", "600x600");
 };
@@ -170,12 +170,12 @@ const bigArt = (url) => {
   - Converte millisecondi in stringa "m:ss"
   - Esempio: 65000 -> "1:05"
 */
-const formatTime = (ms) => {
+const FORMAT_TIME = (ms) => {
   if (!ms) return "0:00";
-  const totalSec = Math.floor(ms / 1000);
-  const min = Math.floor(totalSec / 60);
-  const sec = totalSec % 60;
-  return `${min}:${String(sec).padStart(2, "0")}`;
+  const TOTAL_SEC = Math.floor(ms / 1000);
+  const MIN = Math.floor(TOTAL_SEC / 60);
+  const SEC = TOTAL_SEC % 60;
+  return `${MIN}:${String(SEC).padStart(2, "0")}`;
 };
 
 /*
@@ -183,7 +183,7 @@ const formatTime = (ms) => {
   - Restituisce una nuova funzione che chiama fn solo dopo "ms" millisecondi
     di pausa rispetto all'ultima chiamata. Usata per la ricerca al type.
 */
-const debounce = (fn, ms) => {
+const DEBOUNCE = (fn, ms) => {
   let timerId = null;
   return (...args) => {
     clearTimeout(timerId);
@@ -278,16 +278,17 @@ class Player {
 
     this.audio.addEventListener("timeupdate", () => {
       if (!this.el.tempoCorrente || !this.audio.duration) return;
-      this.el.tempoCorrente.textContent = formatTime(this.audio.currentTime * 1000);
+      this.el.tempoCorrente.textContent = FORMAT_TIME(this.audio.currentTime * 1000);
       this.el.progressFill.style.width = `${(this.audio.currentTime / this.audio.duration) * 100}%`;
     });
 
     this.audio.addEventListener("ended", () => {
       this.isPlaying = false;
       if (this.el.toggle) this.el.toggle.textContent = "▶";
+      AGGIORNA_SIDEBAR_PLAY();
     });
 
-    // ⭐ MODIFICA 1 — NUOVO: se il file audio non si carica (indirizzo sbagliato,
+    // Se il file audio non si carica (indirizzo sbagliato,
     // formato non supportato...) il browser lancia l'evento "error":
     // ora lo scriviamo in console invece di ignorarlo, e rimettiamo l'icona ▶
     this.audio.addEventListener("error", () => {
@@ -295,63 +296,63 @@ class Player {
       this.isPlaying = false;
       if (this.el.toggle) this.el.toggle.textContent = "▶";
     });
-    // ⭐ FINE MODIFICA 1
+    //
   }
 
   mount() {
-    const footer = document.querySelector(".player");
-    if (!footer) return;
+    const FOOTER = document.querySelector(".player");
+    if (!FOOTER) return;
 
-    footer.replaceChildren(); // svuota, come faceva innerHTML
+    FOOTER.replaceChildren(); // svuota, come faceva innerHTML
 
     /* ---------- SINISTRA: cover + titolo/artista ---------- */
-    const playerTrack = creaElemento("div", "player-track d-flex align-items-center", footer);
+    const PLAYER_TRACK = creaElemento("div", "player-track d-flex align-items-center", FOOTER);
 
-    const playerCover = creaElemento("div", "player-cover rounded-1 overflow-hidden flex-shrink-0 bg-black", playerTrack);
-    const coverImg = creaElemento("img", "w-100 h-100 object-fit-cover d-block", playerCover, undefined, "player-cover-img");
-    coverImg.alt = "";
+    const PLAYER_COVER = creaElemento("div", "player-cover rounded-1 overflow-hidden flex-shrink-0 bg-black", PLAYER_TRACK);
+    const COVER_IMG = creaElemento("img", "w-100 h-100 object-fit-cover d-block", PLAYER_COVER, undefined, "player-cover-img");
+    COVER_IMG.alt = "";
 
-    const playerMeta = creaElemento("div", "player-meta", playerTrack);
-    creaElemento("p", "player-title fw-semibold text-truncate m-0", playerMeta, "Seleziona un brano", "player-title");
-    creaElemento("p", "player-artist text-body-secondary text-truncate m-0", playerMeta, "—", "player-artist");
+    const PLAYER_META = creaElemento("div", "player-meta", PLAYER_TRACK);
+    creaElemento("p", "player-title fw-semibold text-truncate m-0", PLAYER_META, "Seleziona un brano", "player-title");
+    creaElemento("p", "player-artist text-body-secondary text-truncate m-0", PLAYER_META, "—", "player-artist");
 
     /* ---------- CENTRO: controlli + barra di avanzamento ---------- */
-    const playerCenter = creaElemento("div", "player-center d-flex flex-column align-items-center gap-2", footer);
+    const PLAYER_CENTER = creaElemento("div", "player-center d-flex flex-column align-items-center gap-2", FOOTER);
 
-    const controls = creaElemento("div", "player-controls d-flex align-items-center gap-3", playerCenter);
-    const bottoni = [
+    const CONTROLS = creaElemento("div", "player-controls d-flex align-items-center gap-3", PLAYER_CENTER);
+    const BOTTONI = [
       { id: "btn-shuffle", cls: "btn-ctrl border-0 bg-transparent", label: "Shuffle", text: "⇄" },
       { id: "btn-prev", cls: "btn-ctrl border-0 bg-transparent", label: "Precedente", text: "⏮" },
       { id: "btn-toggle", cls: "btn-play rounded-circle border-0 bg-white text-black", label: "Play/Pausa", text: "▶" },
       { id: "btn-next", cls: "btn-ctrl border-0 bg-transparent", label: "Successivo", text: "⏭" },
       { id: "btn-repeat", cls: "btn-ctrl border-0 bg-transparent", label: "Ripeti", text: "↻" },
     ];
-    bottoni.forEach(({ id, cls, label, text }) => {
-      const btn = creaElemento("button", cls, controls, text, id);
-      btn.setAttribute("aria-label", label);
+    BOTTONI.forEach(({ id, cls, label, text }) => {
+      const BTN = creaElemento("button", cls, CONTROLS, text, id);
+      BTN.setAttribute("aria-label", label);
     });
 
-    const progress = creaElemento("div", "player-progress d-flex align-items-center gap-2 w-100", playerCenter);
-    creaElemento("span", undefined, progress, "0:00", "time-current");
-    const progressBar = creaElemento("div", "progress-bar flex-grow-1", progress, undefined, "progress-bar");
-    creaElemento("div", "progress-fill h-100", progressBar, undefined, "progress-fill");
-    creaElemento("span", undefined, progress, "0:00", "time-total");
+    const PROGRESS = creaElemento("div", "player-progress d-flex align-items-center gap-2 w-100", PLAYER_CENTER);
+    creaElemento("span", undefined, PROGRESS, "0:00", "time-current");
+    const PROGRESS_BAR = creaElemento("div", "progress-bar flex-grow-1", PROGRESS, undefined, "progress-bar");
+    creaElemento("div", "progress-fill h-100", PROGRESS_BAR, undefined, "progress-fill");
+    creaElemento("span", undefined, PROGRESS, "0:00", "time-total");
 
     let staTrascinando = false;
 
-    const spostaProgress = (evento) => {
-      const box = progressBar.getBoundingClientRect();
-      this.seek((evento.clientX - box.left) / box.width);
+    const SPOSTA_PROGRESS = (evento) => {
+      const BOX = PROGRESS_BAR.getBoundingClientRect();
+      this.seek((evento.clientX - BOX.left) / BOX.width);
     };
 
-    progressBar.addEventListener("mousedown", (evento) => {
+    PROGRESS_BAR.addEventListener("mousedown", (evento) => {
       staTrascinando = true;
-      spostaProgress(evento);
+      SPOSTA_PROGRESS(evento);
     });
 
     document.addEventListener("mousemove", (evento) => {
       if (staTrascinando) {
-        spostaProgress(evento);
+        SPOSTA_PROGRESS(evento);
       }
     });
 
@@ -360,26 +361,26 @@ class Player {
     });
 
     /* ---------- DESTRA: volume ---------- */
-    const playerRight = creaElemento("div", "player-right align-items-center justify-content-end", footer);
-    creaElemento("span", undefined, playerRight, "🔊");
-    const volumeBar = creaElemento("div", "volume-bar", playerRight, undefined, "volume-bar");
-    creaElemento("div", "volume-fill h-100", volumeBar, undefined, "volume-fill");
-    
+    const PLAYER_RIGHT = creaElemento("div", "player-right align-items-center justify-content-end", FOOTER);
+    creaElemento("span", undefined, PLAYER_RIGHT, "🔊");
+    const VOLUME_BAR = creaElemento("div", "volume-bar", PLAYER_RIGHT, undefined, "volume-bar");
+    creaElemento("div", "volume-fill h-100", VOLUME_BAR, undefined, "volume-fill");
+
     let staTrascinandoVolume = false;
 
-    const spostaVolume = (evento) => {
-      const box = volumeBar.getBoundingClientRect();
-      this.setVolume((evento.clientX - box.left) / box.width);
+    const SPOSTA_VOLUME = (evento) => {
+      const BOX = VOLUME_BAR.getBoundingClientRect();
+      this.setVolume((evento.clientX - BOX.left) / BOX.width);
     };
 
-    volumeBar.addEventListener("mousedown", (evento) => {
+    VOLUME_BAR.addEventListener("mousedown", (evento) => {
       staTrascinandoVolume = true;
-      spostaVolume(evento);
+      SPOSTA_VOLUME(evento);
     });
 
     document.addEventListener("mousemove", (evento) => {
       if (staTrascinandoVolume) {
-        spostaVolume(evento);
+        SPOSTA_VOLUME(evento);
       }
     });
 
@@ -416,19 +417,20 @@ class Player {
     });
 
 
-    addToHistory(track);
+    ADD_TO_HISTORY(track);
 
     if (this.el.titolo) {
       this.el.cover.src = track.cover;
       this.el.cover.alt = track.title;
       this.el.titolo.textContent = track.title;
       this.el.artista.textContent = track.artist;
-      this.el.tempoTotale.textContent = formatTime(track.durationMs);
+      this.el.tempoTotale.textContent = FORMAT_TIME(track.durationMs);
       this.el.toggle.textContent = "⏸";
     }
 
     document.querySelector(".track-row.is-playing")?.classList.remove("is-playing");
     document.querySelector(`.track-row[data-track-id="${track.id}"]`)?.classList.add("is-playing");
+    AGGIORNA_SIDEBAR_PLAY();
   }
 
   togglePlay() {
@@ -447,22 +449,23 @@ class Player {
     }
 
     if (this.el.toggle) this.el.toggle.textContent = this.isPlaying ? "⏸" : "▶";
+    AGGIORNA_SIDEBAR_PLAY();
   }
 
   setVolume(v) {
-    const volume = Math.min(1, Math.max(0, v));
-    this.audio.volume = volume;
+    const VOLUME = Math.min(1, Math.max(0, v));
+    this.audio.volume = VOLUME;
 
-    if (this.el.volumeFill) this.el.volumeFill.style.width = `${volume * 100}%`;
+    if (this.el.volumeFill) this.el.volumeFill.style.width = `${VOLUME * 100}%`;
   }
 
   seek(percent) {
     if (!this.audio.duration) return;
 
-    const frazione = Math.min(1, Math.max(0, percent));
-    this.audio.currentTime = this.audio.duration * frazione;
+    const FRAZIONE = Math.min(1, Math.max(0, percent));
+    this.audio.currentTime = this.audio.duration * FRAZIONE;
 
-    if (this.el.progressFill) this.el.progressFill.style.width = `${frazione * 100}%`;
+    if (this.el.progressFill) this.el.progressFill.style.width = `${FRAZIONE * 100}%`;
   }
 }
 
@@ -484,13 +487,13 @@ class Player {
   - Ritorna sempre un array: cosi' i chiamanti possono fare .filter / .map
     senza controllare niente.
 */
-const readArray = (chiave) => {
+const READ_ARRAY = (chiave) => {
   try {
-    const salvato = localStorage.getItem(chiave);
-    if (!salvato) return [];                      // chiave mai scritta
+    const SALVATO = localStorage.getItem(chiave);
+    if (!SALVATO) return [];                      // chiave mai scritta
 
-    const dati = JSON.parse(salvato);
-    return Array.isArray(dati) ? dati : [];       // se non e' un array, lo scartiamo
+    const DATI = JSON.parse(SALVATO);
+    return Array.isArray(DATI) ? DATI : [];       // se non e' un array, lo scartiamo
   } catch (errore) {
     console.error("readArray: dati non validi in", chiave, errore.message);
     return [];
@@ -501,11 +504,11 @@ const readArray = (chiave) => {
   writeArray(chiave, array)
   - localStorage salva solo stringhe, quindi va sempre passato da JSON.stringify.
 */
-const writeArray = (chiave, array) => {
+const WRITE_ARRAY = (chiave, array) => {
   localStorage.setItem(chiave, JSON.stringify(array));
 };
 
-const getHistory = () => readArray(STORAGE_KEY_HISTORY);
+const GET_HISTORY = () => READ_ARRAY(STORAGE_KEY_HISTORY);
 
 /*
   addToHistory(track)
@@ -514,26 +517,26 @@ const getHistory = () => readArray(STORAGE_KEY_HISTORY);
   - Taglia a MAX_HISTORY (12) elementi.
   - Viene chiamata da player.play().
 */
-const addToHistory = (track) => {
-  const senzaDuplicato = getHistory().filter((t) => t.id !== track.id);
-  writeArray(STORAGE_KEY_HISTORY, [track, ...senzaDuplicato].slice(0, MAX_HISTORY));
+const ADD_TO_HISTORY = (track) => {
+  const SENZA_DUPLICATO = GET_HISTORY().filter((t) => t.id !== track.id);
+  WRITE_ARRAY(STORAGE_KEY_HISTORY, [track, ...SENZA_DUPLICATO].slice(0, MAX_HISTORY));
 };
 
-const getFavourites = () => readArray(STORAGE_KEY_FAVOURITES);
+const GET_FAVOURITES = () => READ_ARRAY(STORAGE_KEY_FAVOURITES);
 
-const isFavourite = (trackId) => getFavourites().some((t) => t.id === trackId);
+const IS_FAVOURITE = (trackId) => GET_FAVOURITES().some((t) => t.id === trackId);
 
 /*
   toggleFavourite(track)
   - Se il brano c'e' lo toglie, se non c'e' lo aggiunge in testa.
 */
-const toggleFavourite = (track) => {
-  const preferiti = getFavourites();
-  const giaPresente = preferiti.find((t) => t.id === track.id);
+const TOGGLE_FAVOURITE = (track) => {
+  const PREFERITI = GET_FAVOURITES();
+  const GIA_PRESENTE = PREFERITI.find((t) => t.id === track.id);
 
-  writeArray(
+  WRITE_ARRAY(
     STORAGE_KEY_FAVOURITES,
-    giaPresente ? preferiti.filter((t) => t.id !== track.id) : [track, ...preferiti]
+    GIA_PRESENTE ? PREFERITI.filter((t) => t.id !== track.id) : [track, ...PREFERITI]
   );
 };
 
@@ -543,37 +546,37 @@ const toggleFavourite = (track) => {
   renderSidebar(activePage)
   - activePage: "home" | "search" | "library" (per evidenziare il link attivo)
 */
-const renderSidebar = (activePage) => {
-  const sidebar = document.querySelector(".sidebar");
-  if (!sidebar) return;
+const RENDER_SIDEBAR = (activePage) => {
+  const SIDEBAR = document.querySelector(".sidebar");
+  if (!SIDEBAR) return;
 
-  sidebar.replaceChildren();
+  SIDEBAR.replaceChildren();
 
   /* ---------- Logo ---------- */
-  const brand = creaElemento("div", "brand d-flex align-items-center fw-bold", sidebar);
-  creaElemento("div", "brand-mark rounded-2 text-black", brand, "E");
-  creaElemento("span", "brand-text", brand, "EpiTunes");
+  const BRAND = creaElemento("div", "brand d-flex align-items-center fw-bold", SIDEBAR);
+  creaElemento("div", "brand-mark rounded-2 text-black", BRAND, "E");
+  creaElemento("span", "brand-text", BRAND, "EpiTunes");
 
   /* ---------- Navigazione ---------- */
-  const nav = creaElemento("nav", "sidebar-nav d-flex flex-column gap-1 mb-4", sidebar);
-  const links = [
+  const NAV = creaElemento("nav", "sidebar-nav d-flex flex-column gap-1 mb-4", SIDEBAR);
+  const LINKS = [
     { href: "index.html", page: "home", ico: "🏠", text: "Home" },
     { href: "search.html", page: "search", ico: "🔍", text: "Cerca" },
   ];
-  links.forEach(({ href, page, ico, text }) => {
-    const classeAttiva = activePage === page ? " active" : "";
-    const a = creaElemento("a", `d-flex align-items-center rounded-2 fw-semibold${classeAttiva}`, nav);
-    a.href = href;
-    a.dataset.page = page; // diventa data-page="..."
-    creaElemento("span", "ico text-center", a, ico);
-    creaElemento("span", undefined, a, text);
+  LINKS.forEach(({ href, page, ico, text }) => {
+    const CLASSE_ATTIVA = activePage === page ? " active" : "";
+    const A = creaElemento("a", `d-flex align-items-center rounded-2 fw-semibold${CLASSE_ATTIVA}`, NAV);
+    A.href = href;
+    A.dataset.page = page; // diventa data-page="..."
+    creaElemento("span", "ico text-center", A, ico);
+    creaElemento("span", undefined, A, text);
   });
 
   /* ---------- Preferiti ---------- */
-  creaElemento("p", "sidebar-section-title text-uppercase text-body-secondary m-0", sidebar, "I tuoi preferiti");
-  creaElemento("ul", "sidebar-list list-unstyled m-0", sidebar, undefined, "sidebar-favs");
+  creaElemento("p", "sidebar-section-title text-uppercase text-body-secondary m-0", SIDEBAR, "I tuoi preferiti");
+  creaElemento("ul", "sidebar-list list-unstyled m-0", SIDEBAR, undefined, "sidebar-favs");
 
-  renderSidebarFavs();
+  RENDER_SIDEBAR_FAVS();
 };
 
 /*
@@ -582,20 +585,59 @@ const renderSidebar = (activePage) => {
   - Sta in una funzione a parte perche' va richiamata anche dopo ogni
     toggleFavourite, mentre renderSidebar gira una volta sola all'avvio.
 */
-const renderSidebarFavs = () => {
-  const lista = document.querySelector("#sidebar-favs");
-  if (!lista) return;
+const RENDER_SIDEBAR_FAVS = () => {
+  const LISTA = document.querySelector("#sidebar-favs");
+  if (!LISTA) return;
 
-  const preferiti = getFavourites();
-  lista.replaceChildren();
+  const PREFERITI = GET_FAVOURITES();
+  LISTA.replaceChildren();
 
-  if (preferiti.length === 0) {
-    creaElemento("li", "text-truncate rounded-1", lista, "Nessun preferito");
+  if (PREFERITI.length === 0) {
+    creaElemento("li", "text-truncate rounded-1", LISTA, "Nessun preferito");
     return;
   }
 
-  preferiti.forEach((track) => {
-    creaElemento("li", "text-truncate rounded-1", lista, track.title);
+  PREFERITI.forEach((track) => {
+    const RIGA = creaElemento("li", "text-truncate rounded-1", LISTA, track.title);
+    RIGA.dataset.trackId = String(track.id);
+
+    const BOTTONE = creaElemento("button", "sidebar-play", RIGA, "▶");
+    BOTTONE.type = "button";
+    BOTTONE.setAttribute("aria-label", `Riproduci o metti in pausa ${track.title}`);
+
+    BOTTONE.addEventListener("click", () => {
+      const PLAYER = window.player;
+      if (PLAYER.currentTrack && PLAYER.currentTrack.id === track.id) {
+        PLAYER.togglePlay();
+      } else {
+        PLAYER.play(track);
+      }
+    });
+  });
+
+  AGGIORNA_SIDEBAR_PLAY();
+};
+
+const AGGIORNA_SIDEBAR_PLAY = () => {
+  const PLAYER = window.player;
+  const RIGHE = document.querySelectorAll("#sidebar-favs li");
+
+  RIGHE.forEach((riga) => {
+    const BOTTONE = riga.querySelector(".sidebar-play");
+    if (!BOTTONE) return; // la riga "Nessun preferito" non ha il bottone
+
+    let inRiproduzione = false;
+    if (PLAYER && PLAYER.currentTrack && String(PLAYER.currentTrack.id) === riga.dataset.trackId) {
+      inRiproduzione = true;
+    }
+
+    riga.classList.toggle("is-playing", inRiproduzione);
+
+    if (inRiproduzione && PLAYER.isPlaying) {
+      BOTTONE.textContent = "⏸";
+    } else {
+      BOTTONE.textContent = "▶";
+    }
   });
 };
 
@@ -606,12 +648,12 @@ const renderSidebarFavs = () => {
   - Chiamata da home.js / search.js / album.js / artist.js
   - Monta sidebar, monta player, restituisce il player per essere usato.
 */
-const initPage = (activePage) => {
-  renderSidebar(activePage);
-  const player = new Player();
-  player.mount();
-  window.player = player;
-  return player;
+const INIT_PAGE = (activePage) => {
+  RENDER_SIDEBAR(activePage);
+  const PLAYER = new Player();
+  PLAYER.mount();
+  window.player = PLAYER;
+  return PLAYER;
 };
 
 /* ============================ 8. Export ============================ */
@@ -622,24 +664,24 @@ export {
   STORAGE_KEY_LAST_SEARCH,
   // Helpers
   creaElemento,
-  fetchJSON,
-  bigArt,
-  formatTime,
-  debounce,
-  cercaInfoArtista,
+  FETCH_JSON,
+  BIG_ART,
+  FORMAT_TIME,
+  DEBOUNCE,
+  CERCA_INFO_ARTISTA,
   // Classi
   Track,
   Album,
   Artist,
   Player,
   // localStorage
-  getHistory,
-  addToHistory,
-  getFavourites,
-  isFavourite,
-  toggleFavourite,
+  GET_HISTORY,
+  ADD_TO_HISTORY,
+  GET_FAVOURITES,
+  IS_FAVOURITE,
+  TOGGLE_FAVOURITE,
   // Render
-  renderSidebarFavs,
+  RENDER_SIDEBAR_FAVS,
   // Inizializzazione
-  initPage,
+  INIT_PAGE,
 };
