@@ -28,11 +28,11 @@ let searchSequence = 0;
 
 const CREATE_CARD = (grid, tag) => {
   const COLUMN = creaElemento("div", "col", grid);
-  return creaElemento(tag, "card h-100 border-0", COLUMN);
+  return creaElemento(tag, "card h-100 border-0 position-relative p-3", COLUMN);
 };
 
 const CREATE_IMAGE = (parent, url, alt = "") => {
-  const IMAGE_WRAP = creaElemento("div", "card-image-wrap", parent);
+  const IMAGE_WRAP = creaElemento("div", "card-image-wrap position-relative w-100 overflow-hidden", parent);
   const IMAGE = creaElemento("img", "w-100 h-100 object-fit-cover d-block", IMAGE_WRAP);
 
   IMAGE.src = url || "";
@@ -81,13 +81,13 @@ const RENDER_TRACK_CARD = (rawTrack) => {
   CARD.dataset.trackId = String(TRACK.id);
 
   CREATE_IMAGE(CARD, BIG_ART(TRACK.cover), TRACK.title);
-  creaElemento("p", "card-title", CARD, TRACK.title);
-  creaElemento("p", "card-sub", CARD, TRACK.artist);
+  creaElemento("p", "card-title fw-bold text-truncate mt-0 mb-1 fs-6", CARD, TRACK.title);
+  creaElemento("p", "card-sub text-body-secondary text-truncate m-0 small", CARD, TRACK.artist);
 
   const GIA_PREFERITO = IS_FAVOURITE(TRACK.id);
   const FAV_BUTTON = creaElemento(
     "button",
-    GIA_PREFERITO ? "card-fav is-fav" : "card-fav",
+    GIA_PREFERITO ? "card-fav position-absolute rounded-circle border-0 d-flex align-items-center justify-content-center is-fav" : "card-fav position-absolute rounded-circle border-0 d-flex align-items-center justify-content-center",
     CARD,
     GIA_PREFERITO ? "♥" : "♡"
   );
@@ -106,7 +106,7 @@ const RENDER_TRACK_CARD = (rawTrack) => {
     RENDER_SIDEBAR_FAVS();
   });
 
-  const PLAY_BUTTON = creaElemento("button", "card-play", CARD, "▶");
+  const PLAY_BUTTON = creaElemento("button", "card-play position-absolute rounded-circle border-0 d-flex align-items-center justify-content-center", CARD, "▶");
 
   PLAY_BUTTON.type = "button";
   PLAY_BUTTON.setAttribute(
@@ -135,14 +135,14 @@ const RENDER_ALBUM_CARD = (rawAlbum) => {
   CARD.href = `album.html?id=${ALBUM.id}`;
 
   CREATE_IMAGE(CARD, BIG_ART(ALBUM.cover), ALBUM.title);
-  creaElemento("p", "card-title", CARD, ALBUM.title);
-  creaElemento("p", "card-sub", CARD, ALBUM.artist);
+  creaElemento("p", "card-title fw-bold text-truncate mt-0 mb-1 fs-6", CARD, ALBUM.title);
+  creaElemento("p", "card-sub text-body-secondary text-truncate m-0 small", CARD, ALBUM.artist);
 };
 
 const RENDER_ARTIST_CARD = (rawArtist) => {
   const ARTIST = new Artist(rawArtist);
   const CARD = CREATE_CARD(GRID_ARTISTS, "a");
-  const IMAGE_WRAP = creaElemento("div", "card-image-wrap round", CARD);
+  const IMAGE_WRAP = creaElemento("div", "card-image-wrap position-relative w-100 overflow-hidden round", CARD);
 
   CARD.href = `artist.html?id=${ARTIST.id}`;
 
@@ -153,8 +153,8 @@ const RENDER_ARTIST_CARD = (rawArtist) => {
     IMAGE_WRAP,
     "🎤"
   );
-  creaElemento("p", "card-title", CARD, ARTIST.name);
-  creaElemento("p", "card-sub", CARD, ARTIST.genre || "Artista");
+  creaElemento("p", "card-title fw-bold text-truncate mt-0 mb-1 fs-6", CARD, ARTIST.name);
+  creaElemento("p", "card-sub text-body-secondary text-truncate m-0 small", CARD, ARTIST.genre || "Artista");
 
   // Chiedo la foto a TheAudioDB (stessa foto della pagina artista)
   CARICA_FOTO_ARTISTA(IMAGE_WRAP, ARTIST.name);

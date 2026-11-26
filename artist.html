@@ -11,14 +11,14 @@
 </head>
 
 <body>
-  <div class="app vh-100">
-    <aside class="sidebar py-4 px-3"></aside>
+  <div class="app d-grid vh-100">
+    <aside class="sidebar d-none d-sm-block py-4 px-3 overflow-y-auto"></aside>
 
     <main class="main overflow-y-auto position-relative">
-      <header class="topbar sticky-top d-flex align-items-center justify-content-between px-4">
+      <header class="topbar sticky-top d-flex align-items-center justify-content-between py-3 px-4">
         <div class="topbar-nav d-flex gap-2">
-          <button id="btn-indietro" class="nav-btn rounded-circle border-0 lh-1" aria-label="Indietro">‹</button>
-          <button id="btn-avanti" class="nav-btn rounded-circle border-0 lh-1" aria-label="Avanti">›</button>
+          <button id="btn-indietro" class="nav-btn rounded-circle border-0 lh-1 fs-5" aria-label="Indietro">‹</button>
+          <button id="btn-avanti" class="nav-btn rounded-circle border-0 lh-1 fs-5" aria-label="Avanti">›</button>
         </div>
         <div class="user-pill rounded-pill fw-semibold">Studente Epicode</div>
       </header>
@@ -32,12 +32,12 @@
           - Lista popolare di top tracks; click su brano -> Player
         -->
       <section class="artist-page pt-3 px-4">
-        <div class="artist-hero" id="artist-hero"></div>
+        <div class="artist-hero d-flex flex-column flex-lg-row align-items-start align-items-lg-end gap-4" id="artist-hero"></div>
         <div class="top-tracks mt-2" id="top-tracks"></div>
       </section>
     </main>
 
-    <footer class="player"></footer>
+    <footer class="player d-grid align-items-center"></footer>
   </div>
 
   <audio id="audio-element"></audio>
