@@ -58,11 +58,11 @@ const RENDER_ROW = (rowTitle, tracks, idSezione) => {
 
   tracks.forEach((track) => {
     const COLUMN = creaElemento("div", "col", GRID);
-    const CARD = creaElemento("article", "card h-100 border-0", COLUMN);
+    const CARD = creaElemento("article", "card h-100 border-0 position-relative p-3", COLUMN);
     CARD.dataset.trackId = String(track.id);
 
     // Cover
-    const IMAGE_WRAP = creaElemento("div", "card-image-wrap", CARD);
+    const IMAGE_WRAP = creaElemento("div", "card-image-wrap position-relative w-100 overflow-hidden", CARD);
     const IMAGE = creaElemento(
       "img",
       "w-100 h-100 object-fit-cover d-block",
@@ -74,14 +74,14 @@ const RENDER_ROW = (rowTitle, tracks, idSezione) => {
     IMAGE.loading = "lazy";
 
     // Titolo e artista
-    creaElemento("p", "card-title", CARD, track.title);
-    creaElemento("p", "card-sub", CARD, track.artist);
+    creaElemento("p", "card-title fw-bold text-truncate mt-0 mb-1 fs-6", CARD, track.title);
+    creaElemento("p", "card-sub text-body-secondary text-truncate m-0 small", CARD, track.artist);
 
     // Cuore
     const GIA_PREFERITO = IS_FAVOURITE(track.id);
     const FAV_BUTTON = creaElemento(
       "button",
-      GIA_PREFERITO ? "card-fav is-fav" : "card-fav",
+      GIA_PREFERITO ? "card-fav position-absolute rounded-circle border-0 d-flex align-items-center justify-content-center is-fav" : "card-fav position-absolute rounded-circle border-0 d-flex align-items-center justify-content-center",
       CARD,
       GIA_PREFERITO ? "♥" : "♡"
     );
@@ -107,7 +107,7 @@ const RENDER_ROW = (rowTitle, tracks, idSezione) => {
     });
 
     // Bottone play
-    const PLAY_BUTTON = creaElemento("button", "card-play", CARD, "▶");
+    const PLAY_BUTTON = creaElemento("button", "card-play position-absolute rounded-circle border-0 d-flex align-items-center justify-content-center", CARD, "▶");
     PLAY_BUTTON.type = "button";
     PLAY_BUTTON.setAttribute(
       "aria-label",

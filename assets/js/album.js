@@ -58,7 +58,7 @@ const TRACKLIST = document.querySelector("#tracklist");
 const MOSTRA_MESSAGGIO = (testo, classe) => {
   ALBUM_HERO.replaceChildren();
   TRACKLIST.replaceChildren();
-  creaElemento("p", `${classe} w-100 m-0`, ALBUM_HERO, testo);
+  creaElemento("p", `${classe} w-100 m-0 text-center text-body-secondary`, ALBUM_HERO, testo);
 };
 
 /*
@@ -145,11 +145,11 @@ const RENDER_HERO = (album, tracks) => {
   /* ---------- Testi ---------- */
   const META = creaElemento("div", "hero-meta d-flex flex-column gap-2", ALBUM_HERO);
   // m-0: Bootstrap mette 1rem sotto ogni <p> e <h1>, qui la spaziatura la da' gap-2
-  creaElemento("p", "hero-kicker text-uppercase fw-bold m-0", META, "ALBUM");
+  creaElemento("p", "hero-kicker text-uppercase fw-bold m-0 small", META, "ALBUM");
   creaElemento("h1", "hero-title m-0", META, album.title ?? "Titolo sconosciuto");
 
   // Sotto-riga: il nome dell'artista e' un LINK alla sua pagina
-  const SOTTO_RIGA = creaElemento("p", "hero-sub m-0", META);
+  const SOTTO_RIGA = creaElemento("p", "hero-sub text-body-secondary m-0 fs-6", META);
   const LINK_ARTISTA = creaElemento("a", "fw-semibold text-body", SOTTO_RIGA, album.artist ?? "Artista sconosciuto");
   if (album.artistId) LINK_ARTISTA.href = `artist.html?id=${album.artistId}`;
 
@@ -180,12 +180,12 @@ const RENDER_HERO = (album, tracks) => {
   BOTTONE_PLAY.addEventListener("click", () => PLAYER.play(PRIMA_TRACCIA));
 
   // Niente classi colore: .btn-fav-big.is-fav lo colora di rosso in app.css
-  CREA_BOTTONE_CUORE(PRIMA_TRACCIA, AZIONI, "btn-fav-big rounded-circle");
+  CREA_BOTTONE_CUORE(PRIMA_TRACCIA, AZIONI, "btn-fav-big rounded-circle fs-5");
 };
 
 /*
   renderTracklist(tracks)  — punto 6
-  Una <li class="track-row"> per traccia. In app.css .track-row e' una
+  Una <li class="track-row d-grid align-items-center"> per traccia. In app.css .track-row e' una
   griglia a 4 colonne (32px | 1fr | 80px | 48px): numero, titolo, durata, cuore.
 */
 const RENDER_TRACKLIST = (tracks) => {
@@ -198,14 +198,14 @@ const RENDER_TRACKLIST = (tracks) => {
   tracks.forEach((track, indice) => {
     // Niente d-* ne' colori sulla riga: il layout e' la griglia di app.css
     // e il colore cambia con hover / .is-playing
-    const RIGA = creaElemento("li", "track-row", LISTA);
+    const RIGA = creaElemento("li", "track-row d-grid align-items-center", LISTA);
     // data-track-id: player.play() cerca .track-row[data-track-id="..."]
     // per aggiungere .is-playing (testo verde) alla riga in riproduzione
     RIGA.dataset.trackId = String(track.id);
 
-    creaElemento("span", "track-num", RIGA, indice + 1); // indice parte da 0, il numero da 1
-    creaElemento("span", "track-title", RIGA, track.title ?? "Brano sconosciuto");
-    creaElemento("span", "track-time", RIGA, FORMAT_TIME(track.durationMs)); // ms -> "m:ss"
+    creaElemento("span", "track-num text-center text-body-secondary", RIGA, indice + 1); // indice parte da 0, il numero da 1
+    creaElemento("span", "track-title fw-semibold text-truncate", RIGA, track.title ?? "Brano sconosciuto");
+    creaElemento("span", "track-time text-end text-body-secondary", RIGA, FORMAT_TIME(track.durationMs)); // ms -> "m:ss"
     CREA_BOTTONE_CUORE(track, RIGA, "track-fav border-0 bg-transparent");
 
     // Click su tutta la riga -> play (il cuore ferma il click con stopPropagation)

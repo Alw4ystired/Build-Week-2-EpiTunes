@@ -306,7 +306,7 @@ class Player {
     FOOTER.replaceChildren(); // svuota, come faceva innerHTML
 
     /* ---------- SINISTRA: cover + titolo/artista ---------- */
-    const PLAYER_TRACK = creaElemento("div", "player-track d-flex align-items-center", FOOTER);
+    const PLAYER_TRACK = creaElemento("div", "player-track d-flex align-items-center gap-3", FOOTER);
 
     const PLAYER_COVER = creaElemento("div", "player-cover rounded-1 overflow-hidden flex-shrink-0 bg-black", PLAYER_TRACK);
     const COVER_IMG = creaElemento("img", "w-100 h-100 object-fit-cover d-block", PLAYER_COVER, undefined, "player-cover-img");
@@ -323,7 +323,7 @@ class Player {
     const BOTTONI = [
       { id: "btn-shuffle", cls: "btn-ctrl border-0 bg-transparent", label: "Shuffle", text: "⇄" },
       { id: "btn-prev", cls: "btn-ctrl border-0 bg-transparent", label: "Precedente", text: "⏮" },
-      { id: "btn-toggle", cls: "btn-play rounded-circle border-0 bg-white text-black", label: "Play/Pausa", text: "▶" },
+      { id: "btn-toggle", cls: "btn-play rounded-circle border-0 bg-white text-black fs-6", label: "Play/Pausa", text: "▶" },
       { id: "btn-next", cls: "btn-ctrl border-0 bg-transparent", label: "Successivo", text: "⏭" },
       { id: "btn-repeat", cls: "btn-ctrl border-0 bg-transparent", label: "Ripeti", text: "↻" },
     ];
@@ -361,7 +361,7 @@ class Player {
     });
 
     /* ---------- DESTRA: volume ---------- */
-    const PLAYER_RIGHT = creaElemento("div", "player-right align-items-center justify-content-end", FOOTER);
+    const PLAYER_RIGHT = creaElemento("div", "player-right d-none d-sm-flex align-items-center justify-content-end gap-2", FOOTER);
     creaElemento("span", undefined, PLAYER_RIGHT, "🔊");
     const VOLUME_BAR = creaElemento("div", "volume-bar", PLAYER_RIGHT, undefined, "volume-bar");
     creaElemento("div", "volume-fill h-100", VOLUME_BAR, undefined, "volume-fill");
@@ -558,9 +558,9 @@ const RENDER_SIDEBAR = (activePage) => {
   SIDEBAR.replaceChildren();
 
   /* ---------- Logo ---------- */
-  const BRAND = creaElemento("div", "brand d-flex align-items-center fw-bold", SIDEBAR);
-  creaElemento("div", "brand-mark rounded-2 text-black", BRAND, "E");
-  creaElemento("span", "brand-text", BRAND, "EpiTunes");
+  const BRAND = creaElemento("div", "brand d-flex align-items-center gap-2 fw-bold fs-5", SIDEBAR);
+  creaElemento("div", "brand-mark d-flex align-items-center justify-content-center rounded-2 text-black fw-bold", BRAND, "E");
+  creaElemento("span", "brand-text d-none d-lg-inline", BRAND, "EpiTunes");
 
   /* ---------- Navigazione ---------- */
   const NAV = creaElemento("nav", "sidebar-nav d-flex flex-column gap-1 mb-4", SIDEBAR);
@@ -570,16 +570,16 @@ const RENDER_SIDEBAR = (activePage) => {
   ];
   LINKS.forEach(({ href, page, ico, text }) => {
     const CLASSE_ATTIVA = activePage === page ? " active" : "";
-    const A = creaElemento("a", `d-flex align-items-center rounded-2 fw-semibold${CLASSE_ATTIVA}`, NAV);
+    const A = creaElemento("a", `d-flex align-items-center justify-content-center justify-content-lg-start gap-3 px-0 px-lg-3 py-2 rounded-2 fw-semibold${CLASSE_ATTIVA}`, NAV);
     A.href = href;
     A.dataset.page = page; // diventa data-page="..."
-    creaElemento("span", "ico text-center", A, ico);
-    creaElemento("span", undefined, A, text);
+    creaElemento("span", "ico text-center fs-5", A, ico);
+    creaElemento("span", "d-none d-lg-inline", A, text);
   });
 
   /* ---------- Preferiti ---------- */
-  creaElemento("p", "sidebar-section-title text-uppercase text-body-secondary m-0", SIDEBAR, "I tuoi preferiti");
-  creaElemento("ul", "sidebar-list list-unstyled m-0", SIDEBAR, undefined, "sidebar-favs");
+  creaElemento("p", "sidebar-section-title d-none d-lg-block text-uppercase text-body-secondary px-3 pt-3 pb-2 m-0", SIDEBAR, "I tuoi preferiti");
+  creaElemento("ul", "sidebar-list d-none d-lg-flex flex-column gap-1 list-unstyled m-0 px-1", SIDEBAR, undefined, "sidebar-favs");
 
   RENDER_SIDEBAR_FAVS();
 };
@@ -598,15 +598,15 @@ const RENDER_SIDEBAR_FAVS = () => {
   LISTA.replaceChildren();
 
   if (PREFERITI.length === 0) {
-    creaElemento("li", "text-truncate rounded-1", LISTA, "Nessun preferito");
+    creaElemento("li", "text-truncate rounded-1 px-2 py-2", LISTA, "Nessun preferito");
     return;
   }
 
   PREFERITI.forEach((track) => {
-    const RIGA = creaElemento("li", "text-truncate rounded-1", LISTA, track.title);
+    const RIGA = creaElemento("li", "text-truncate rounded-1 px-2 py-2", LISTA, track.title);
     RIGA.dataset.trackId = String(track.id);
 
-    const BOTTONE = creaElemento("button", "sidebar-play", RIGA, "▶");
+    const BOTTONE = creaElemento("button", "sidebar-play position-absolute rounded-circle border-0 text-black d-flex align-items-center justify-content-center", RIGA, "▶");
     BOTTONE.type = "button";
     BOTTONE.setAttribute("aria-label", `Riproduci o metti in pausa ${track.title}`);
 

@@ -53,7 +53,7 @@ const TOP_TRACKS = document.querySelector("#top-tracks");
 const MOSTRA_MESSAGGIO = (testo, classe) => {
   ARTIST_HERO.replaceChildren();
   TOP_TRACKS.replaceChildren();
-  creaElemento("p", `${classe} w-100 m-0`, ARTIST_HERO, testo);
+  creaElemento("p", `${classe} w-100 m-0 text-center text-body-secondary`, ARTIST_HERO, testo);
 };
 
 /*
@@ -153,19 +153,18 @@ const RENDER_HERO = (artist, tracks) => {
   // opacity-0 (Bootstrap): immagine trasparente finche' non e' caricata del tutto
   const IMMAGINE = creaElemento("img", "w-100 h-100 object-fit-cover d-block opacity-0", COVER);
   IMMAGINE.alt = artist.name ?? "";
-  IMMAGINE.style.transition = "opacity 0.3s ease"; // comparsa morbida invece di uno scatto
   // Quando una foto si e' caricata davvero (evento "load"), tolgo opacity-0: compare.
   IMMAGINE.addEventListener("load", () => IMMAGINE.classList.remove("opacity-0"), { once: true });
 
   /* ---------- Testi ---------- */
   const META = creaElemento("div", "hero-meta d-flex flex-column gap-2", ARTIST_HERO);
-  creaElemento("p", "hero-kicker text-uppercase fw-bold m-0", META, "ARTISTA");
+  creaElemento("p", "hero-kicker text-uppercase fw-bold m-0 small", META, "ARTISTA");
   creaElemento("h1", "hero-title m-0", META, artist.name ?? "Artista sconosciuto");
 
   // La sotto-riga parte con il solo genere, e lo <span> "conteggio" resta
   // VUOTO: lo riempie loadArtist quando sa se TheAudioDB ha i follower veri.
   // Cosi' non si vede un numero finto che poi cambia (stesso "scatto" della foto).
-  const SOTTO_RIGA = creaElemento("p", "hero-sub m-0", META, artist.genre ?? "Genere sconosciuto");
+  const SOTTO_RIGA = creaElemento("p", "hero-sub text-body-secondary m-0 fs-6", META, artist.genre ?? "Genere sconosciuto");
   const CONTEGGIO = creaElemento("span", undefined, SOTTO_RIGA);
  
 
@@ -185,7 +184,7 @@ const RENDER_HERO = (artist, tracks) => {
 
 /*
   renderTopTracks(tracks)  — punto 6
-  Tracklist "uguale a album": <li class="track-row"> con numero, titolo,
+  Tracklist "uguale a album": <li class="track-row d-grid align-items-center"> con numero, titolo,
   durata e cuore (griglia a 4 colonne di app.css).
   In piu' c'e' il titolo "Popolari" sopra, come su Spotify.
 */
@@ -196,7 +195,7 @@ const RENDER_TOP_TRACKS = (tracks) => {
   creaElemento("h2", "fs-4 fw-bold mb-3", TOP_TRACKS, "Popolari");
 
   if (tracks.length === 0) {
-    creaElemento("p", "empty m-0", TOP_TRACKS, "Nessun brano disponibile per questo artista");
+    creaElemento("p", "empty m-0 text-center text-body-secondary", TOP_TRACKS, "Nessun brano disponibile per questo artista");
     return;
   }
 
@@ -206,13 +205,13 @@ const RENDER_TOP_TRACKS = (tracks) => {
   tracks.forEach((track, indice) => {
     // Niente d-* ne' colori sulla riga: il layout e' la griglia di app.css
     // e il colore cambia con hover / .is-playing
-    const RIGA = creaElemento("li", "track-row", LISTA);
+    const RIGA = creaElemento("li", "track-row d-grid align-items-center", LISTA);
     // data-track-id: player.play() lo usa per aggiungere .is-playing (verde)
     RIGA.dataset.trackId = String(track.id);
 
-    creaElemento("span", "track-num", RIGA, indice + 1); // posizione in classifica
-    creaElemento("span", "track-title", RIGA, track.title ?? "Brano sconosciuto");
-    creaElemento("span", "track-time", RIGA, FORMAT_TIME(track.durationMs)); // ms -> "m:ss"
+    creaElemento("span", "track-num text-center text-body-secondary", RIGA, indice + 1); // posizione in classifica
+    creaElemento("span", "track-title fw-semibold text-truncate", RIGA, track.title ?? "Brano sconosciuto");
+    creaElemento("span", "track-time text-end text-body-secondary", RIGA, FORMAT_TIME(track.durationMs)); // ms -> "m:ss"
     CREA_BOTTONE_CUORE(track, RIGA, "track-fav border-0 bg-transparent");
 
     // Click su tutta la riga -> play (il cuore ferma il click con stopPropagation)
