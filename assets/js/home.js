@@ -18,7 +18,7 @@ import {
    ============================================================
 
    COSA DEVI FARE
-   1) initPage("home")  // monta sidebar + player
+   1) INIT_PAGE("home")  // monta sidebar + player
    2) Costruisci queste righe (sezioni) nella .home:
         - "Riprodotti di recente" (da getHistory())  -- mostra solo se non vuota
         - "I tuoi preferiti"       (da getFavourites()) -- mostra solo se non vuota
