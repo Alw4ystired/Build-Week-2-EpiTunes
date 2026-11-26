@@ -222,10 +222,3 @@ const loadHome = async () => {
 };
 
 loadHome();
-
-
-
-
-
-
-
