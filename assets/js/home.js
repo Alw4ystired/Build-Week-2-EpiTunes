@@ -172,7 +172,7 @@ const caricaSuggerimenti = async (termine) => {
     const brani = dati.results.map((raw) => new Track(raw));// da ogni risultato "grezzo" dell'API crea un oggetto Track, in un nuovo array
     
     brani.sort(() => Math.random() - 0.5);//album radom
-    return brani.slice(0, 4);
+    return brani.slice(0, 6);
 
   } catch (err) {
     console.error(err);
