@@ -369,16 +369,19 @@ class Player {
     let staTrascinandoVolume = false;
 
     const SPOSTA_VOLUME = (evento) => {
+      evento.preventDefault();
       const BOX = VOLUME_BAR.getBoundingClientRect();
       this.setVolume((evento.clientX - BOX.left) / BOX.width);
     };
 
     VOLUME_BAR.addEventListener("mousedown", (evento) => {
+      evento.preventDefault();
       staTrascinandoVolume = true;
       SPOSTA_VOLUME(evento);
     });
 
     document.addEventListener("mousemove", (evento) => {
+      evento.preventDefault();
       if (staTrascinandoVolume) {
         SPOSTA_VOLUME(evento);
       }
@@ -387,7 +390,9 @@ class Player {
     document.addEventListener("mouseup", () => {
       staTrascinandoVolume = false;
     });
+
     /* ---------- riferimenti agli elementi, ora che esistono ---------- */
+
     this.el = {
       cover: document.querySelector("#player-cover-img"),
       titolo: document.querySelector("#player-title"),
@@ -400,7 +405,7 @@ class Player {
     };
 
     this.el.toggle.addEventListener("click", () => this.togglePlay());
-    this.setVolume(0.8);
+    this.setVolume(0.5);
   }
 
   play(track) {
@@ -540,7 +545,7 @@ const TOGGLE_FAVOURITE = (track) => {
   );
 };
 
-/* ============================ 6. Render sidebar ============================ */
+/* ============================ 6. Render sidebar e bottoni ============================ */
 
 /*
   renderSidebar(activePage)
@@ -641,15 +646,61 @@ const AGGIORNA_SIDEBAR_PLAY = () => {
   });
 };
 
+/*
+  attivaFrecce()
+  - Collega le frecce ‹ › della topbar (#btn-indietro, #btn-avanti)
+    alla cronologia del browser, come le frecce del browser stesso:
+      indietro -> history.back()    (torna alla pagina precedente)
+      avanti   -> history.forward() (annulla l'ultimo "indietro")
+  - Se il browser supporta la Navigation API (window.navigation), DISATTIVA
+    le frecce che non hanno niente da fare:
+      canGoBack    = c'e' una pagina precedente?
+      canGoForward = sono tornato indietro almeno una volta? (c'e' un "avanti"?)
+  - Se la Navigation API non c'e', le frecce restano sempre attive:
+    funzionano comunque, history.forward() senza "avanti" non fa nulla.
+*/
+const attivaFrecce = () => {
+  const indietro = document.querySelector("#btn-indietro");
+  const avanti = document.querySelector("#btn-avanti");
+  if (!indietro || !avanti) return; // pagina senza frecce: non faccio niente
+
+  // Il comportamento: deleghiamo tutto alla cronologia del browser
+  indietro.addEventListener("click", () => history.back());
+  avanti.addEventListener("click", () => history.forward());
+
+  // Feature detection: se il browser non ha la Navigation API mi fermo qui
+  const navigazione = window.navigation;
+  if (!navigazione) return;
+
+  // Aggiorna lo stato dei bottoni (attivo / disattivato)
+  const aggiornaStato = () => {
+    indietro.disabled = !navigazione.canGoBack;
+    avanti.disabled = !navigazione.canGoForward;
+    // opacity-50 (Bootstrap): freccia semi-trasparente quando e' disattivata
+    indietro.classList.toggle("opacity-50", indietro.disabled);
+    avanti.classList.toggle("opacity-50", avanti.disabled);
+  };
+
+  aggiornaStato(); // stato iniziale, appena la pagina si carica
+
+  // "pageshow" scatta anche quando il browser, tornando indietro, ripristina
+  // la pagina dalla sua memoria (bfcache) SENZA rieseguire il JavaScript:
+  // senza questo, la freccia "avanti" resterebbe disattivata anche quando
+  // in realta' c'e' una pagina in avanti.
+  window.addEventListener("pageshow", aggiornaStato);
+};
+
 /* ============================ 7. Inizializzazione ============================ */
 
 /*
-  initPage(activePage)
+  INIT_PAGE(activePage)
   - Chiamata da home.js / search.js / album.js / artist.js
   - Monta sidebar, monta player, restituisce il player per essere usato.
+  - Fa in modo che le frecce ‹ › della topbar vadano avanti e indietro
 */
 const INIT_PAGE = (activePage) => {
   RENDER_SIDEBAR(activePage);
+   attivaFrecce();
   const PLAYER = new Player();
   PLAYER.mount();
   window.player = PLAYER;

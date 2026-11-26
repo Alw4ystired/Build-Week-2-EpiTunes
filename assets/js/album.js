@@ -18,7 +18,7 @@ import {
    ============================================================
 
    COSA DEVI FARE
-   1) initPage("home")
+   1) INIT_PAGE("home")
    2) Leggi l'id dell'album dalla query string:
         const id = new URLSearchParams(window.location.search).get("id");
    3) Se manca l'id -> messaggio "Album non trovato" e stop.
