@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="it" data-bs-theme="dark">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EpiTunes — Brano</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.9/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-yEPZ7jP9S0QKiUQ0m3jjsO4ProIW7wvR9gXkI7JOGa2XVsw53Yke2bsdkBbjmmiX" crossorigin="anonymous">
+  <link rel="stylesheet" href="assets/css/app.css" />
+</head>
+
+<body>
+  <div class="app d-grid vh-100">
+    <aside class="sidebar py-4 px-3 overflow-y-auto"></aside>
+
+    <main class="main overflow-y-auto position-relative">
+      <header class="topbar sticky-top d-flex align-items-center justify-content-between px-4 py-3">
+        <div class="topbar-nav d-flex gap-2">
+          <button class="nav-btn rounded-circle border-0 lh-1" id="btn-indietro" aria-label="Indietro">‹</button>
+          <button class="nav-btn rounded-circle border-0 lh-1" id="btn-avanti" aria-label="Avanti">›</button>
+        </div>
+        <div class="user-pill rounded-pill fw-semibold">Studente Epicode</div>
+      </header>
+
+      <section class="track-page pt-3 px-4 pb-5">
+        <div class="album-hero d-flex flex-column align-items-center text-center gap-3" id="track-hero"></div>
+        <div class="mt-2" id="track-lyrics"></div>
+      </section>
+    </main>
+
+    <footer class="player d-grid align-items-center"></footer>
+  </div>
+
+  <audio id="audio-element"></audio>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
+    integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r"
+    crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.9/dist/js/bootstrap.min.js"
+    integrity="sha384-89aa4glufciPv46aKltztWQEmk+Tu9W2RhzXr6VcnUUEub7F8+06RcL2RYLCOHUq"
+    crossorigin="anonymous"></script>
+  
+   <script type="module" src="assets/js/track.js"></script>
+</body>
+
+</html>
