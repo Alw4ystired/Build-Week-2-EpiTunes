@@ -110,7 +110,7 @@ const RENDER_HERO = (track, raw) => {
   /* ---------- Bottoni Play + Cuore (stessi di album.js) ---------- */
   const AZIONI = creaElemento("div", "hero-actions d-flex align-items-center justify-content-center gap-3", META);
 
-  const BOTTONE_PLAY = creaElemento("button", "btn-play-big rounded-circle border-0", AZIONI, "▶");
+  const BOTTONE_PLAY = creaElemento("button", "btn-play-big rounded-circle border-0 fs-6", AZIONI, "▶");
   BOTTONE_PLAY.type = "button";
   BOTTONE_PLAY.setAttribute("aria-label", `Riproduci ${track.title}`);
   BOTTONE_PLAY.disabled = !track.previewUrl; // niente anteprima = bottone spento
@@ -124,6 +124,8 @@ const RENDER_HERO = (track, raw) => {
       BOTTONE_PLAY.textContent = "▶";
     }
   };
+
+  AGGIORNA_ICONA(); // se il brano sta gia' suonando (arrivo dal footer) parte con ⏸
 
   BOTTONE_PLAY.addEventListener("click", () => {
     if (PLAYER.currentTrack && PLAYER.currentTrack.id === track.id) {
