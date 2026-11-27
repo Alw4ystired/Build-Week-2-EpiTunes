@@ -30,9 +30,10 @@ const PLAYER = INIT_PAGE("home");
 const TRACK_HERO = document.querySelector("#track-hero");
 const TRACK_LYRICS = document.querySelector("#track-lyrics");
 
-// Serve per togliere i listener sull'audio del brano precedente quando
-// la pagina si ridisegna per un nuovo brano (altrimenti si accumulano)
-let ascoltatoriHero = null;
+// La funzione che aggiorna ▶/⏸ del brano mostrato. La salvo qui per poterla
+// togliere (removeEventListener) quando la pagina si ridisegna per un nuovo
+// brano: altrimenti i listener sull'audio si accumulano.
+let iconaHeroAttuale = null;
 
 // Numero del caricamento in corso: se nel frattempo ne parte un altro
 // (cambio brano veloce), i risultati del vecchio vengono ignorati
@@ -227,9 +228,13 @@ const RENDER_HERO = (track, raw) => {
     }
   };
 
-  ascoltatoriHero?.abort(); // tolgo i listener del brano mostrato prima
-  ascoltatoriHero = new AbortController();
-  const OPZIONI = { signal: ascoltatoriHero.signal };
+  // Tolgo i listener del brano mostrato prima (se c'era)
+  if (iconaHeroAttuale) {
+    PLAYER.audio.removeEventListener("play", iconaHeroAttuale);
+    PLAYER.audio.removeEventListener("pause", iconaHeroAttuale);
+    PLAYER.audio.removeEventListener("ended", iconaHeroAttuale);
+  }
+  iconaHeroAttuale = AGGIORNA_ICONA;
 
   AGGIORNA_ICONA(); // se il brano sta gia' suonando (arrivo dal footer) parte con ⏸
 
@@ -243,9 +248,9 @@ const RENDER_HERO = (track, raw) => {
   });
 
   // Se play/pausa/fine arrivano da fuori (es. dal pulsante nel footer), aggiorno comunque l'icona
-  PLAYER.audio.addEventListener("play", AGGIORNA_ICONA, OPZIONI);
-  PLAYER.audio.addEventListener("pause", AGGIORNA_ICONA, OPZIONI);
-  PLAYER.audio.addEventListener("ended", AGGIORNA_ICONA, OPZIONI);
+  PLAYER.audio.addEventListener("play", AGGIORNA_ICONA);
+  PLAYER.audio.addEventListener("pause", AGGIORNA_ICONA);
+  PLAYER.audio.addEventListener("ended", AGGIORNA_ICONA);
 
   const BOTTONE_CUORE = creaElemento("button", "btn-fav-big rounded-circle fs-5", AZIONI);
   BOTTONE_CUORE.type = "button";
@@ -369,7 +374,8 @@ const RENDER_TESTO = (testo) => {
 /* ============================ CARICAMENTO ============================ */
 
 const LOAD_TRACK = async () => {
-  const QUESTO_CARICAMENTO = ++caricamentoAttuale;
+  caricamentoAttuale = caricamentoAttuale + 1;
+  const QUESTO_CARICAMENTO = caricamentoAttuale;
 
   // Leggo l'id dall'indirizzo: track.html?id=1440831203 -> "1440831203"
   const ID = new URLSearchParams(window.location.search).get("id");
