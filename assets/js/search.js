@@ -97,18 +97,10 @@ const RENDER_TRACK_CARD = (rawTrack) => {
   );
 
   FAV_BUTTON.type = "button";
-  FAV_BUTTON.setAttribute("aria-label", `Aggiungi ${TRACK.title} ai preferiti`);
-
-  FAV_BUTTON.addEventListener("click", (event) => {
-    event.stopPropagation();
-    TOGGLE_FAVOURITE(TRACK);
-
-    const ORA = IS_FAVOURITE(TRACK.id);
-    FAV_BUTTON.classList.toggle("is-fav", ORA);
-    FAV_BUTTON.textContent = ORA ? "♥" : "♡";
-
-    RENDER_SIDEBAR_FAVS();
-  });
+  FAV_BUTTON.setAttribute(
+    "aria-label",
+    `${GIA_PREFERITO ? "Rimuovi" : "Aggiungi"} ${TRACK.title} ${GIA_PREFERITO ? "dai" : "ai"} preferiti`
+  );
 
   const PLAY_BUTTON = creaElemento("button", "card-play position-absolute rounded-circle border-0 d-flex align-items-center justify-content-center", CARD, "▶");
 
@@ -121,16 +113,46 @@ const RENDER_TRACK_CARD = (rawTrack) => {
   );
   PLAY_BUTTON.disabled = !TRACK.previewUrl;
 
-  PLAY_BUTTON.addEventListener("click", (event) => {
-    event.stopPropagation();
-    if (TRACK.previewUrl) PLAYER.play(TRACK, BRANI_IN_PAGINA);
-  });
-
-  CARD.addEventListener("click", (event) => {
-    if (event.target.closest("button")) return;
-    if (TRACK.previewUrl) PLAYER.play(TRACK, BRANI_IN_PAGINA);
-  });
 };
+
+/*
+  Event delegation sulla griglia dei brani.
+  Un ascoltatore solo, messo una volta all'avvio, invece di tre su ogni card.
+  Il click "sale" dal bottone alla card alla griglia: closest() dice da dove
+  e' partito, e il data-track-id della card dice quale brano e'.
+  Con 12 risultati: 1 ascoltatore invece di 36.
+  Funziona anche con le card di una ricerca nuova, perche' la griglia resta
+  sempre la stessa: cambiano solo le card dentro.
+*/
+GRID_TRACKS.addEventListener("click", (event) => {
+  const CARD = event.target.closest(".card");
+  if (!CARD) return; // click nel vuoto fra una card e l'altra
+
+  const TRACK = BRANI_IN_PAGINA.find((brano) => String(brano.id) === CARD.dataset.trackId);
+  if (!TRACK) return;
+
+  // Cuore
+  const CUORE = event.target.closest(".card-fav");
+  if (CUORE) {
+    TOGGLE_FAVOURITE(TRACK);
+    const ORA = IS_FAVOURITE(TRACK.id);
+    CUORE.classList.toggle("is-fav", ORA);
+    CUORE.textContent = ORA ? "♥" : "♡";
+    CUORE.setAttribute(
+      "aria-label",
+      `${ORA ? "Rimuovi" : "Aggiungi"} ${TRACK.title} ${ORA ? "dai" : "ai"} preferiti`
+    );
+    RENDER_SIDEBAR_FAVS();
+    return;
+  }
+
+  // Un altro bottone che qualcuno aggiungesse in futuro non fa partire la musica
+  const BOTTONE = event.target.closest("button");
+  if (BOTTONE && !BOTTONE.classList.contains("card-play")) return;
+
+  // Bottone verde, oppure un punto qualsiasi della card
+  if (TRACK.previewUrl) PLAYER.play(TRACK, BRANI_IN_PAGINA);
+});
 
 const RENDER_ALBUM_CARD = (rawAlbum) => {
   const ALBUM = new Album(rawAlbum);
