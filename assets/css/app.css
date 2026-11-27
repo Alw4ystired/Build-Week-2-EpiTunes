@@ -19,19 +19,26 @@
    ============================================================ */
 
 :root {
-  --bg-base: #101112;        /* antracite: sfondo dell'app */
-  --bg-panel: #181a1b;       /* pannelli (In primo piano, coda) */
-  --bg-elev: #202223;        /* card */
-  --bg-elev-hover: #2a2c2d;  /* card / righe al passaggio del mouse */
+  --bg-base: #101112;
+  /* antracite: sfondo dell'app */
+  --bg-panel: #181a1b;
+  /* pannelli (In primo piano, coda) */
+  --bg-elev: #202223;
+  /* card */
+  --bg-elev-hover: #2a2c2d;
+  /* card / righe al passaggio del mouse */
   --bg-sidebar: #111213;
   --bg-player: #171819;
   --bg-input: #202223;
-  --text-primary: #f5f3ef;   /* avorio */
+  --text-primary: #f5f3ef;
+  /* avorio */
   --text-secondary: #999d9e;
   --text-input: #f5f3ef;
-  --accent: #c8fa48;         /* verde lime: marchio, controlli attivi, azioni principali */
+  --accent: #c8fa48;
+  /* verde lime: marchio, controlli attivi, azioni principali */
   --accent-dark: #b2e23a;
-  --success: var(--accent);  /* il vecchio "verde play" ora e' il lime */
+  --success: var(--accent);
+  /* il vecchio "verde play" ora e' il lime */
   --danger: #ff5268;
   --border: #303334;
   --radius-sm: 9px;
@@ -51,9 +58,12 @@
   --bs-body-color-rgb: 245, 243, 239;
   --bs-body-font-family: var(--font-ui);
   --bs-secondary-color: var(--text-secondary);
-  --bs-secondary-bg: var(--bg-elev);   /* bg-body-secondary */
-  --bs-tertiary-bg: var(--bg-panel);   /* bg-body-tertiary */
-  --bs-border-color: var(--border);    /* classi border, border-top, border-bottom */
+  --bs-secondary-bg: var(--bg-elev);
+  /* bg-body-secondary */
+  --bs-tertiary-bg: var(--bg-panel);
+  /* bg-body-tertiary */
+  --bs-border-color: var(--border);
+  /* classi border, border-top, border-bottom */
 }
 
 * {
@@ -170,8 +180,10 @@ button {
   & .sidebar-list {
     --altezza-voce: 36px;
     max-height: calc(var(--altezza-voce) * 4 + 4px * 3);
-    overflow-y: auto;             /* barra di scorrimento solo se le voci sono piu' di 4 */
-    overscroll-behavior: contain; /* in fondo alla lista NON fa scorrere tutta la sidebar */
+    overflow-y: auto;
+    /* barra di scorrimento solo se le voci sono piu' di 4 */
+    overscroll-behavior: contain;
+    /* in fondo alla lista NON fa scorrere tutta la sidebar */
     scrollbar-width: thin;
     scrollbar-color: var(--border) transparent;
 
@@ -185,8 +197,10 @@ button {
     }
 
     & li {
-      line-height: 20px; /* altezza della riga fissa: cosi' il calcolo dei 156px e' esatto */
-      flex-shrink: 0;    /* la lista e' un flex in colonna: senza, le voci si schiaccerebbero */
+      line-height: 20px;
+      /* altezza della riga fissa: cosi' il calcolo dei 156px e' esatto */
+      flex-shrink: 0;
+      /* la lista e' un flex in colonna: senza, le voci si schiaccerebbero */
     }
   }
 
@@ -362,6 +376,7 @@ button {
 
   /* da tastiera: play e cuore compaiono anche col focus */
   &:focus-within {
+
     & .card-play,
     & .card-fav {
       opacity: 1;
@@ -481,11 +496,16 @@ button {
    Non e' sincronizzato con la musica: la riga "accesa" e' quella che sta
    al centro del riquadro mentre scorri con la rotellina. */
 .lyrics-box {
-  height: 280px;               /* circa il riquadro rosso: si vedono poche righe per volta */
-  overflow-y: auto;            /* scorrimento verticale con rotellina / trackpad */
-  overscroll-behavior: contain;/* arrivato in fondo al testo NON fa scorrere tutta la pagina */
-  scroll-snap-type: y proximity;/* lo scorrimento si "aggancia" dolcemente alle righe */
-  scroll-behavior: smooth;     /* scorrimento morbido quando clicchi una riga */
+  height: 280px;
+  /* circa il riquadro rosso: si vedono poche righe per volta */
+  overflow-y: auto;
+  /* scorrimento verticale con rotellina / trackpad */
+  overscroll-behavior: contain;
+  /* arrivato in fondo al testo NON fa scorrere tutta la pagina */
+  scroll-snap-type: y proximity;
+  /* lo scorrimento si "aggancia" dolcemente alle righe */
+  scroll-behavior: smooth;
+  /* scorrimento morbido quando clicchi una riga */
 
   /* spazio sopra e sotto: serve perche' anche la PRIMA e l'ULTIMA riga
      possano arrivare al centro del riquadro (circa meta' altezza) */
@@ -504,17 +524,22 @@ button {
   }
 
   & .lyrics-line {
-    font-size: clamp(20px, 2.5vw, 30px); /* righe grandi, che si adattano allo schermo */
+    font-size: clamp(20px, 2.5vw, 30px);
+    /* righe grandi, che si adattano allo schermo */
     font-weight: 700;
     line-height: 1.3;
     margin: 0 0 16px 0;
     color: var(--text-secondary);
-    opacity: 0.4;                /* righe "spente" */
-    transform: scale(0.95);      /* un po' piu' piccole */
+    opacity: 0.4;
+    /* righe "spente" */
+    transform: scale(0.95);
+    /* un po' piu' piccole */
     transform-origin: center;
     cursor: pointer;
-    scroll-snap-align: center;   /* ogni riga, agganciandosi, si ferma al centro */
-    transition: color 0.3s ease, opacity 0.3s ease, transform 0.3s ease; /* l'animazione */
+    scroll-snap-align: center;
+    /* ogni riga, agganciandosi, si ferma al centro */
+    transition: color 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
+    /* l'animazione */
 
     &:hover {
       opacity: 0.7;
@@ -553,22 +578,27 @@ button {
    sovrascrive rounded-pill di Bootstrap) e il pannello continua il riquadro. */
 .search-box:has(.recent-searches:not([hidden])) .search-input {
   border-radius: 24px 24px 0 0 !important;
-  border-bottom-color: var(--border); /* la riga che separa barra e tendina */
+  border-bottom-color: var(--border);
+  /* la riga che separa barra e tendina */
 }
 
 .recent-searches {
   position: absolute;
-  top: 100%;                         /* subito sotto la barra, senza spazio in mezzo */
+  top: 100%;
+  /* subito sotto la barra, senza spazio in mezzo */
   left: 0;
   width: 100%;
   max-width: 480px;
   z-index: 10;
   padding: 12px 18px 16px;
-  background: var(--bg-input);       /* stesso colore della barra: sembra un riquadro solo */
-  border: 1px solid var(--accent);   /* lo stesso lime della barra a fuoco */
+  background: var(--bg-input);
+  /* stesso colore della barra: sembra un riquadro solo */
+  border: 1px solid var(--accent);
+  /* lo stesso lime della barra a fuoco */
   border-top: 0;
   border-radius: 0 0 24px 24px;
-  box-shadow: 0 14px 20px -10px rgba(0, 0, 0, 0.5); /* ombra solo verso il basso */
+  box-shadow: 0 14px 20px -10px rgba(0, 0, 0, 0.5);
+  /* ombra solo verso il basso */
 
   & .recent-title {
     font-size: 0.72rem;
@@ -577,7 +607,8 @@ button {
 }
 
 .recent-chip {
-  background: var(--bg-elev-hover);  /* un po' piu' chiaro del pannello, se no non si vede */
+  background: var(--bg-elev-hover);
+  /* un po' piu' chiaro del pannello, se no non si vede */
   border: 1px solid var(--border);
   color: var(--text-primary);
   max-width: 100%;
@@ -615,7 +646,8 @@ button {
   background: var(--bg-player);
   border-top: 1px solid var(--border);
   padding: 12px 16px;
-  grid-template-columns: minmax(0, 1fr) auto; /* telefono: brano | controlli */
+  grid-template-columns: minmax(0, 1fr) auto;
+  /* telefono: brano | controlli */
   gap: 8px;
 
   & .player-track {
@@ -715,6 +747,7 @@ button {
 }
 
 #carosello-primo-piano {
+
   /* Frecce: piccoli cerchi discreti invece delle bande larghe di Bootstrap */
   & .carousel-control-prev,
   & .carousel-control-next {
@@ -749,6 +782,7 @@ button {
 
 /* sui touch (niente mouse) play e cuore delle card restano sempre visibili */
 @media (hover: none) {
+
   .card .card-play,
   .card .card-fav {
     opacity: 1;
@@ -786,7 +820,7 @@ button {
    Bootstrap arriva solo a row-cols-xxl-6, quindi la classe la aggiungo
    io, scritta come quelle di Bootstrap: ogni colonna e' 1/8 della riga. */
 @media (min-width: 1400px) {
-  .row-cols-xxl-8 > * {
+  .row-cols-xxl-8>* {
     flex: 0 0 auto;
     width: 12.5%;
   }

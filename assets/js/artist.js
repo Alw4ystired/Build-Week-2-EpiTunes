@@ -182,7 +182,7 @@ const RENDER_HERO = (artist, tracks) => {
   // Cosi' non si vede un numero finto che poi cambia (stesso "scatto" della foto).
   const SOTTO_RIGA = creaElemento("p", "hero-sub text-body-secondary m-0 fs-6", META, artist.genre ?? "Genere sconosciuto");
   const CONTEGGIO = creaElemento("span", undefined, SOTTO_RIGA);
- 
+
 
   /* ---------- Bottoni ▶ e ⇄ ---------- */
   const AZIONI = creaElemento("div", "hero-actions d-flex align-items-center gap-3", META);
@@ -311,6 +311,6 @@ const LOAD_ARTIST = async () => {
     INFO?.foto,
     BIG_ART(TRACKS[0]?.cover), // ?. perche' l'artista potrebbe non avere brani
   ]);
- };
+};
 
 LOAD_ARTIST();
