@@ -338,6 +338,60 @@ button {
   }
 }
 
+/* ============================ Testo (pagina brano) ============================ */
+
+/* Riquadro del testo in stile Spotify (track.js -> RENDER_TESTO).
+   Non e' sincronizzato con la musica: la riga "accesa" e' quella che sta
+   al centro del riquadro mentre scorri con la rotellina. */
+.lyrics-box {
+  height: 280px;               /* circa il riquadro rosso: si vedono poche righe per volta */
+  overflow-y: auto;            /* scorrimento verticale con rotellina / trackpad */
+  overscroll-behavior: contain;/* arrivato in fondo al testo NON fa scorrere tutta la pagina */
+  scroll-snap-type: y proximity;/* lo scorrimento si "aggancia" dolcemente alle righe */
+  scroll-behavior: smooth;     /* scorrimento morbido quando clicchi una riga */
+
+  /* spazio sopra e sotto: serve perche' anche la PRIMA e l'ULTIMA riga
+     possano arrivare al centro del riquadro (circa meta' altezza) */
+  padding-block: 120px;
+
+  /* niente barra di scorrimento visibile, come su Spotify
+     (scrollbar-width per Firefox, ::-webkit-scrollbar per Chrome/Edge/Safari) */
+  scrollbar-width: none;
+
+  /* sfumatura: le righe in alto e in basso svaniscono nel buio */
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 30%, #000 70%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 30%, #000 70%, transparent 100%);
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  & .lyrics-line {
+    font-size: clamp(20px, 2.5vw, 30px); /* righe grandi, che si adattano allo schermo */
+    font-weight: 700;
+    line-height: 1.3;
+    margin: 0 0 16px 0;
+    color: var(--text-secondary);
+    opacity: 0.4;                /* righe "spente" */
+    transform: scale(0.95);      /* un po' piu' piccole */
+    transform-origin: center;
+    cursor: pointer;
+    scroll-snap-align: center;   /* ogni riga, agganciandosi, si ferma al centro */
+    transition: color 0.3s ease, opacity 0.3s ease, transform 0.3s ease; /* l'animazione */
+
+    &:hover {
+      opacity: 0.7;
+    }
+
+    /* la riga al centro del riquadro: bianca, piena e a grandezza normale */
+    &.is-active {
+      color: var(--text-primary);
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+}
+
 /* ============================ Ricerca ============================ */
 
 .search-input {
