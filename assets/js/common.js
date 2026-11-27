@@ -65,9 +65,11 @@ const API_BASE = "https://itunes.apple.com";
 const AUDIODB_BASE = "https://www.theaudiodb.com/api/v1/json/123";
 const STORAGE_KEY_HISTORY = "epitunes_history";
 const STORAGE_KEY_FAVOURITES = "epitunes_favourites";
+const STORAGE_KEY_FAV_ALBUMS = "epitunes_fav_albums";   // ⭐ NUOVO — album salvati ("+ Salva album" / cuore)
+const STORAGE_KEY_FAV_ARTISTS = "epitunes_fav_artists"; // ⭐ NUOVO — artisti seguiti ("Segui" / cuore)
 const STORAGE_KEY_LAST_SEARCH = "epitunes_last_search";
 const STORAGE_KEY_PLAYER = "epitunes_player"; // brano in riproduzione + secondo a cui era arrivato
-const STORAGE_KEY_VOLUME = "epitunes_volume"; 
+const STORAGE_KEY_VOLUME = "epitunes_volume";
 const DEFAULT_VOLUME = 0.5;
 const MAX_HISTORY = 12;
 
@@ -326,6 +328,15 @@ class Player {
 
     // Ogni volta che l'audio parte o si ferma (da qualunque pulsante) aggiorno
     // le icone ▶/⏸ della sidebar e delle card
+    // L'API da' durationMs del brano INTERO, ma noi suoniamo un'anteprima di
+    // circa 30 secondi. Appena il file e' caricato il browser sa quanto dura
+    // davvero: sovrascrivo il tempo totale con quello.
+    this.audio.addEventListener("loadedmetadata", () => {
+      if (this.el.tempoTotale && Number.isFinite(this.audio.duration)) {
+        this.el.tempoTotale.textContent = FORMAT_TIME(this.audio.duration * 1000);
+      }
+    });
+
     this.audio.addEventListener("play", () => AGGIORNA_SIDEBAR_PLAY());
     this.audio.addEventListener("pause", () => AGGIORNA_SIDEBAR_PLAY());
   }
@@ -436,24 +447,24 @@ class Player {
       }
     });
 
-    const PLAYER_COVER = creaElemento("div", "player-cover rounded-1 overflow-hidden flex-shrink-0 bg-black", PLAYER_TRACK);
+    const PLAYER_COVER = creaElemento("div", "player-cover rounded-2 overflow-hidden flex-shrink-0 bg-black", PLAYER_TRACK);
     const COVER_IMG = creaElemento("img", "w-100 h-100 object-fit-cover d-block", PLAYER_COVER, undefined, "player-cover-img");
     COVER_IMG.alt = "";
 
     const PLAYER_META = creaElemento("div", "player-meta", PLAYER_TRACK);
-    creaElemento("p", "player-title fw-semibold text-truncate m-0", PLAYER_META, "Seleziona un brano", "player-title");
-    creaElemento("p", "player-artist text-body-secondary text-truncate m-0", PLAYER_META, "—", "player-artist");
+    creaElemento("p", "player-title fw-bold text-truncate m-0", PLAYER_META, "Seleziona un brano", "player-title");
+    creaElemento("p", "player-artist text-body-secondary text-truncate m-0", PLAYER_META, "La tua musica ti aspetta", "player-artist");
 
     /* ---------- CENTRO: controlli + barra di avanzamento ---------- */
     const PLAYER_CENTER = creaElemento("div", "player-center d-flex flex-column align-items-center gap-2", FOOTER);
 
     const CONTROLS = creaElemento("div", "player-controls d-flex align-items-center gap-3", PLAYER_CENTER);
     const BOTTONI = [
-      { id: "btn-shuffle", cls: "btn-ctrl border-0 bg-transparent", label: "Shuffle", text: "⇄" },
+      { id: "btn-shuffle", cls: "btn-ctrl border-0 bg-transparent d-none d-sm-inline-block", label: "Shuffle", text: "⇄" },
       { id: "btn-prev", cls: "btn-ctrl border-0 bg-transparent", label: "Precedente", text: "⏮" },
       { id: "btn-toggle", cls: "btn-play rounded-circle border-0 bg-white text-black fs-6", label: "Play/Pausa", text: "▶" },
       { id: "btn-next", cls: "btn-ctrl border-0 bg-transparent", label: "Successivo", text: "⏭" },
-      { id: "btn-repeat", cls: "btn-ctrl border-0 bg-transparent", label: "Ripeti", text: "↻" },
+      { id: "btn-repeat", cls: "btn-ctrl border-0 bg-transparent d-none d-sm-inline-block", label: "Ripeti", text: "↻" },
     ];
     BOTTONI.forEach(({ id, cls, label, text }) => {
       const BTN = creaElemento("button", cls, CONTROLS, text, id);
@@ -461,10 +472,10 @@ class Player {
     });
 
     const PROGRESS = creaElemento("div", "player-progress d-flex align-items-center gap-2 w-100", PLAYER_CENTER);
-    creaElemento("span", undefined, PROGRESS, "0:00", "time-current");
+    creaElemento("span", "d-none d-sm-inline", PROGRESS, "0:00", "time-current");
     const PROGRESS_BAR = creaElemento("div", "progress-bar flex-grow-1", PROGRESS, undefined, "progress-bar");
     creaElemento("div", "progress-fill h-100", PROGRESS_BAR, undefined, "progress-fill");
-    creaElemento("span", undefined, PROGRESS, "0:00", "time-total");
+    creaElemento("span", "d-none d-sm-inline", PROGRESS, "0:00", "time-total");
 
     let staTrascinando = false;
 
@@ -552,7 +563,7 @@ class Player {
     });
 
     this.aggiornaInterruttori();
-   this.setVolume(GET_VOLUME());
+    this.setVolume(GET_VOLUME());
     this.ripristina(); // se c'era un brano in riproduzione nella pagina prima, lo rimetto
   }
 
@@ -694,12 +705,16 @@ class Player {
   }
 
   setVolume(v) {
-  const VOLUME = Math.min(1, Math.max(0, v));
-  this.audio.volume = VOLUME;
-  localStorage.setItem(STORAGE_KEY_VOLUME, String(VOLUME));
+    const VOLUME = Math.min(1, Math.max(0, v));
+    this.audio.volume = VOLUME;
 
-  if (this.el.volumeFill) this.el.volumeFill.style.width = `${VOLUME * 100}%`;
-}
+    // Trascinando la barra questo metodo viene chiamato a ogni movimento del
+    // mouse: SALVA_VOLUME aspetta che la mano si fermi, cosi' si scrive su
+    // localStorage una volta sola invece di decine.
+    SALVA_VOLUME(VOLUME);
+
+    if (this.el.volumeFill) this.el.volumeFill.style.width = `${VOLUME * 100}%`;
+  }
 
   seek(percent) {
     if (!this.audio.duration) return;
@@ -758,6 +773,13 @@ const GET_VOLUME = () => {
   return Number.isNaN(VOLUME) ? DEFAULT_VOLUME : VOLUME;
 };
 
+/*
+  SALVA_VOLUME(v)
+  - Scrive il volume in localStorage, ma solo 300ms dopo l'ultima chiamata.
+  - Riusa DEBOUNCE (sezione 2), lo stesso che rimanda la ricerca mentre si digita.
+*/
+const SALVA_VOLUME = DEBOUNCE((v) => localStorage.setItem(STORAGE_KEY_VOLUME, String(v)), 300);
+
 const GET_HISTORY = () => READ_ARRAY(STORAGE_KEY_HISTORY);
 
 /*
@@ -790,6 +812,34 @@ const TOGGLE_FAVOURITE = (track) => {
   );
 };
 
+// ⭐ NUOVO
+/*
+  TOGGLE_IN_LISTA(chiave, elemento)
+  - Stessa logica di TOGGLE_FAVOURITE, ma per qualsiasi lista salvata:
+    se l'elemento (riconosciuto dal suo id) c'e' lo toglie, se non c'e'
+    lo aggiunge in testa.
+  - La uso per album e artisti, cosi' non riscrivo due volte lo stesso codice.
+*/
+const TOGGLE_IN_LISTA = (chiave, elemento) => {
+  const LISTA = READ_ARRAY(chiave);
+  const GIA_PRESENTE = LISTA.some((e) => e.id === elemento.id);
+
+  WRITE_ARRAY(
+    chiave,
+    GIA_PRESENTE ? LISTA.filter((e) => e.id !== elemento.id) : [elemento, ...LISTA]
+  );
+};
+
+// ⭐ NUOVO — Album preferiti (si salva l'intero oggetto Album: id, titolo, artista, cover...)
+const GET_FAV_ALBUMS = () => READ_ARRAY(STORAGE_KEY_FAV_ALBUMS);
+const IS_FAV_ALBUM = (albumId) => GET_FAV_ALBUMS().some((a) => a.id === albumId);
+const TOGGLE_FAV_ALBUM = (album) => TOGGLE_IN_LISTA(STORAGE_KEY_FAV_ALBUMS, album);
+
+// ⭐ NUOVO — Artisti preferiti (si salva l'intero oggetto Artist: id, nome, genere)
+const GET_FAV_ARTISTS = () => READ_ARRAY(STORAGE_KEY_FAV_ARTISTS);
+const IS_FAV_ARTIST = (artistId) => GET_FAV_ARTISTS().some((a) => a.id === artistId);
+const TOGGLE_FAV_ARTIST = (artist) => TOGGLE_IN_LISTA(STORAGE_KEY_FAV_ARTISTS, artist);
+
 /* ============================ 6. Render sidebar e bottoni ============================ */
 
 /*
@@ -798,8 +848,8 @@ const TOGGLE_FAVOURITE = (track) => {
     sia i bottoncini nella topbar (sotto i 576px).
 */
 const LINKS_NAV = [
-  { href: "index.html", page: "home", ico: "🏠", text: "Home" },
-  { href: "search.html", page: "search", ico: "🔍", text: "Cerca" },
+  { href: "index.html", page: "home", ico: "⌂", text: "Home" },
+  { href: "search.html", page: "search", ico: "⌕", text: "Cerca" },
 ];
 
 /*
@@ -814,25 +864,39 @@ const RENDER_SIDEBAR = (activePage) => {
 
   /* ---------- Logo ---------- */
   const BRAND = creaElemento("div", "brand d-flex align-items-center gap-2 fw-bold fs-5", SIDEBAR);
-  creaElemento("div", "brand-mark d-flex align-items-center justify-content-center rounded-2 text-black fw-bold", BRAND, "E");
+  creaElemento("div", "brand-mark d-flex align-items-center justify-content-center rounded-3 text-black fw-bolder", BRAND, "E");
   creaElemento("span", "brand-text d-none d-lg-inline", BRAND, "EpiTunes");
 
   /* ---------- Navigazione ---------- */
   const NAV = creaElemento("nav", "sidebar-nav d-flex flex-column gap-1 mb-4", SIDEBAR);
   LINKS_NAV.forEach(({ href, page, ico, text }) => {
-    const CLASSE_ATTIVA = activePage === page ? " active" : "";
-    const A = creaElemento("a", `d-flex align-items-center justify-content-center justify-content-lg-start gap-3 px-0 px-lg-3 py-2 rounded-2 fw-semibold${CLASSE_ATTIVA}`, NAV);
+    const CLASSE_ATTIVA = activePage === page ? " active fw-bold" : " fw-medium";
+    const A = creaElemento("a", `d-flex align-items-center justify-content-center justify-content-lg-start gap-3 px-0 px-lg-3 py-2 rounded-3${CLASSE_ATTIVA}`, NAV);
     A.href = href;
     A.dataset.page = page; // diventa data-page="..."
     creaElemento("span", "ico text-center fs-5", A, ico);
     creaElemento("span", "d-none d-lg-inline", A, text);
   });
 
-  /* ---------- Preferiti ---------- */
-  creaElemento("p", "sidebar-section-title d-none d-lg-block text-uppercase text-body-secondary px-3 pt-3 pb-2 m-0", SIDEBAR, "I tuoi preferiti");
-  creaElemento("ul", "sidebar-list d-none d-lg-flex flex-column gap-1 list-unstyled m-0 px-1", SIDEBAR, undefined, "sidebar-favs");
+  /* ---------- Preferiti: tre sezioni ---------- */
+  // ⭐ MODIFICA — prima c'era una sola sezione "I tuoi preferiti".
+  // Ora sono tre, con le stesse classi (stesso aspetto, stesse regole responsive).
+  // "sidebar-favs" resta l'id delle tracce: lo usano gia' AGGIORNA_SIDEBAR_PLAY e il resto del codice.
+  const SEZIONI_PREFERITI = [
+    { titolo: "Tracce preferite", idLista: "sidebar-favs" },
+    { titolo: "Album preferiti", idLista: "sidebar-fav-albums" },
+    { titolo: "Artisti preferiti", idLista: "sidebar-fav-artists" },
+  ];
 
-  RENDER_SIDEBAR_FAVS();
+  SEZIONI_PREFERITI.forEach(({ titolo, idLista }) => {
+    const TITOLO = creaElemento("p", "sidebar-section-title d-none d-lg-block text-uppercase text-body-secondary px-3 pt-3 pb-2 m-0", SIDEBAR, titolo);
+    // ⭐ NUOVO — <span> con il numero di elementi, es. " (3)".
+    // Id = id della lista + "-contatore": cosi' AGGIORNA_CONTATORE sa quale aggiornare.
+    creaElemento("span", undefined, TITOLO, " (0)", `${idLista}-contatore`);
+    creaElemento("ul", "sidebar-list d-none d-lg-flex flex-column gap-1 list-unstyled m-0 px-1", SIDEBAR, undefined, idLista);
+  });
+
+  RENDER_SIDEBAR_FAVS(); // riempie tutte e tre le liste
 };
 
 /*
@@ -843,11 +907,11 @@ const RENDER_SIDEBAR = (activePage) => {
   - Stesse classi delle frecce (nav-btn rounded-circle...): stessa grandezza e stile.
   - d-flex + align/justify-content-center centrano l'icona dentro il cerchio.
 */
-const RENDER_NAV_MOBILE = () => {
+const RENDER_NAV_MOBILE = (activePage) => {
   const TOPBAR_NAV = document.querySelector(".topbar-nav");
   if (!TOPBAR_NAV) return;
 
-  LINKS_NAV.forEach(({ href, ico, text }) => {
+  LINKS_NAV.forEach(({ href, page, ico, text }) => {
     const A = creaElemento(
       "a",
       "nav-btn rounded-circle border-0 lh-1 d-flex d-sm-none align-items-center justify-content-center",
@@ -856,29 +920,46 @@ const RENDER_NAV_MOBILE = () => {
     );
     A.href = href;
     A.setAttribute("aria-label", text);
+    // la pagina in cui sono e' accesa (lime), come il link attivo della sidebar
+    if (activePage === page) {
+      A.classList.add("active");
+      A.setAttribute("aria-current", "page");
+    }
   });
 };
 
+// ⭐ NUOVO
 /*
-  renderSidebarFavs()
-  - Riempie la lista dei preferiti in sidebar.
-  - Sta in una funzione a parte perche' va richiamata anche dopo ogni
-    toggleFavourite, mentre renderSidebar gira una volta sola all'avvio.
+  AGGIORNA_CONTATORE(idLista, numero)
+  - Scrive " (numero)" nello <span> accanto al titolo della sezione.
+  - Trova lo span grazie all'id creato in RENDER_SIDEBAR: idLista + "-contatore".
+  - Viene chiamata ogni volta che una lista si ridisegna: il numero e' sempre giusto.
 */
-const RENDER_SIDEBAR_FAVS = () => {
+const AGGIORNA_CONTATORE = (idLista, numero) => {
+  const CONTATORE = document.querySelector(`#${idLista}-contatore`);
+  if (CONTATORE) CONTATORE.textContent = ` (${numero})`;
+};
+
+/*
+  RENDER_TRACCE_PREFERITE()
+  ⭐ MODIFICA — e' la vecchia RENDER_SIDEBAR_FAVS, identica, solo rinominata
+  (+ il contatore): riempie "Tracce preferite" con il bottone ▶ di lato.
+*/
+const RENDER_TRACCE_PREFERITE = () => {
   const LISTA = document.querySelector("#sidebar-favs");
   if (!LISTA) return;
 
   const PREFERITI = GET_FAVOURITES();
+  AGGIORNA_CONTATORE("sidebar-favs", PREFERITI.length); // ⭐ NUOVO — numero di tracce
   LISTA.replaceChildren();
 
   if (PREFERITI.length === 0) {
-    creaElemento("li", "text-truncate rounded-1 px-2 py-2", LISTA, "Nessun preferito");
+    creaElemento("li", "text-truncate rounded-2 px-2 py-2", LISTA, "Nessun preferito");
     return;
   }
 
   PREFERITI.forEach((track) => {
-    const RIGA = creaElemento("li", "text-truncate rounded-1 px-2 py-2", LISTA, track.title);
+    const RIGA = creaElemento("li", "text-truncate rounded-2 ps-2 pe-5 py-2", LISTA, track.title);
     RIGA.dataset.trackId = String(track.id);
 
     const BOTTONE = creaElemento("button", "sidebar-play position-absolute rounded-circle border-0 text-black d-flex align-items-center justify-content-center", RIGA, "▶");
@@ -896,6 +977,45 @@ const RENDER_SIDEBAR_FAVS = () => {
   });
 
   AGGIORNA_SIDEBAR_PLAY();
+};
+
+// ⭐ NUOVO
+/*
+  RENDER_LISTA_LINK(idLista, elementi, testoVuoto, pagina, testoDi)
+  - Riempie una lista della sidebar con dei LINK (album o artisti).
+  - pagina:  dove porta il link ("album.html" / "artist.html"): e' lo STESSO
+             link delle card della ricerca, la pagina si apre come cercandola.
+  - testoDi: funzione che dice cosa scrivere (titolo dell'album / nome dell'artista)
+  - Il link ha d-block + px-2 py-2: e' cliccabile su tutta la riga.
+*/
+const RENDER_LISTA_LINK = (idLista, elementi, testoVuoto, pagina, testoDi) => {
+  const LISTA = document.querySelector(`#${idLista}`);
+  if (!LISTA) return;
+
+  AGGIORNA_CONTATORE(idLista, elementi.length);
+  LISTA.replaceChildren();
+
+  if (elementi.length === 0) {
+    creaElemento("li", "text-truncate rounded-2 px-2 py-2", LISTA, testoVuoto);
+    return;
+  }
+
+  elementi.forEach((elemento) => {
+    const RIGA = creaElemento("li", "rounded-2", LISTA);
+    const LINK = creaElemento("a", "d-block text-truncate px-2 py-2", RIGA, testoDi(elemento));
+    LINK.href = `${pagina}?id=${elemento.id}`;
+  });
+};
+
+/*
+  RENDER_SIDEBAR_FAVS()
+  ⭐ MODIFICA — prima riempiva solo i brani; ora aggiorna tutte e tre le liste.
+  Il nome resta uguale: le pagine che la chiamano gia' non vanno toccate.
+*/
+const RENDER_SIDEBAR_FAVS = () => {
+  RENDER_TRACCE_PREFERITE();
+  RENDER_LISTA_LINK("sidebar-fav-albums", GET_FAV_ALBUMS(), "Nessun album", "album.html", (album) => album.title);
+  RENDER_LISTA_LINK("sidebar-fav-artists", GET_FAV_ARTISTS(), "Nessun artista", "artist.html", (artista) => artista.name);
 };
 
 /*
@@ -1002,12 +1122,25 @@ const attivaFrecce = () => {
 */
 const INIT_PAGE = (activePage) => {
   RENDER_SIDEBAR(activePage);
-  RENDER_NAV_MOBILE();
+  RENDER_NAV_MOBILE(activePage);
   attivaFrecce();
   const PLAYER = new Player();
   PLAYER.mount();
   window.player = PLAYER;
   AGGIORNA_SIDEBAR_PLAY(); // ora window.player esiste: evidenzio il preferito in riproduzione
+
+  // ⭐ NUOVO — Tornando con ‹ › il browser rimette la pagina dalla sua memoria
+  // (bfcache) SENZA rieseguire il JavaScript: cuori, "Salva album"/"Segui" e
+  // sidebar mostrerebbero i dati VECCHI, e un click su un cuore "vecchio"
+  // toglierebbe un preferito invece di aggiungerlo.
+  // evento.persisted e' true SOLO quando la pagina arriva dalla bfcache: la ricarico.
+  // Il player non si perde: salvaStato (pagehide) e ripristina (mount) lo rimettono com'era.
+  window.addEventListener("pageshow", (evento) => {
+    if (evento.persisted) {
+      window.location.reload();
+    }
+  });
+
   return PLAYER;
 };
 
@@ -1035,6 +1168,12 @@ export {
   GET_FAVOURITES,
   IS_FAVOURITE,
   TOGGLE_FAVOURITE,
+  GET_FAV_ALBUMS,    // ⭐ NUOVO — home.js (filtro "Album")
+  IS_FAV_ALBUM,      // ⭐ NUOVO — album.js, search.js, home.js
+  TOGGLE_FAV_ALBUM,  // ⭐ NUOVO
+  GET_FAV_ARTISTS,   // ⭐ NUOVO — home.js (filtro "Artisti")
+  IS_FAV_ARTIST,     // ⭐ NUOVO — artist.js, search.js, home.js
+  TOGGLE_FAV_ARTIST, // ⭐ NUOVO
   // Render
   RENDER_SIDEBAR_FAVS,
   AGGIORNA_CARD_PLAY,

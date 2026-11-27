@@ -11,6 +11,8 @@ import {
   IS_FAVOURITE,
   RENDER_SIDEBAR_FAVS,
   API_BASE,
+  IS_FAV_ALBUM,     // ⭐ NUOVO — l'album e' gia' salvato?
+  TOGGLE_FAV_ALBUM, // ⭐ NUOVO — salva / togli l'album
 } from "./common.js";
 
 /* ============================================================
@@ -76,9 +78,9 @@ const FORMAT_DURATA_TOTALE = (ms) => {
 
 /*
   aggiornaCuori(trackId)
-  - La prima traccia ha DUE cuori: uno nell'hero e uno nella sua riga.
-  - Ogni cuore ha data-fav-id con l'id del brano: cosi' li trovo tutti
-    e li aggiorno insieme, invece di aggiornare solo quello cliccato.
+  - Aggiorna il cuore della riga del brano dopo un click.
+  - Ogni cuore ha data-fav-id con l'id del brano: se ci fossero piu' cuori
+    per lo stesso brano, si aggiornano tutti insieme.
 */
 const AGGIORNA_CUORI = (trackId) => {
   const PREFERITO = IS_FAVOURITE(trackId); // rileggo lo stato vero da localStorage
@@ -118,6 +120,22 @@ const CREA_BOTTONE_CUORE = (track, genitore, classi) => {
   return BOTTONE;
 };
 
+// ⭐ NUOVO
+/*
+  CREA_LINK_TESTO(track, genitore)
+  - Bottoncino "Testo" che apre la pagina del brano (track.html) con il testo scorrevole.
+  - E' un <a> (link vero) con l'aspetto di un bottone Bootstrap piccolo.
+  - stopPropagation: il link sta DENTRO la riga, che al click fa partire il brano.
+    Fermo il click qui (la navigazione del link avviene lo stesso).
+*/
+const CREA_LINK_TESTO = (track, genitore) => {
+  const LINK = creaElemento("a", "btn btn-outline-light btn-sm rounded-pill py-0 px-2", genitore, "Testo");
+  LINK.href = `track.html?id=${track.id}`;
+  LINK.setAttribute("aria-label", `Testo di ${track.title}`);
+  LINK.addEventListener("click", (event) => event.stopPropagation());
+  return LINK;
+};
+
 /* ============================ RENDER ============================ */
 
 /*
@@ -128,7 +146,7 @@ const CREA_BOTTONE_CUORE = (track, genitore, classi) => {
       <p class="hero-kicker">ALBUM</p>
       <h1 class="hero-title">Titolo</h1>
       <p class="hero-sub"><a>Artista</a><span> · anno · brani · durata</span></p>
-      <div class="hero-actions"> [▶] [♡] </div>
+      <div class="hero-actions"> [▶] [+ Salva album] </div>
     </div>
 */
 const RENDER_HERO = (album, tracks) => {
@@ -167,7 +185,7 @@ const RENDER_HERO = (album, tracks) => {
     ` · ${album.year} · ${NUMERO_BRANI} ${PAROLA_BRANI} · ${FORMAT_DURATA_TOTALE(DURATA_TOTALE)}`
   );
 
-  /* ---------- Bottoni Play + Cuore (sulla prima traccia) ---------- */
+  /* ---------- Bottoni Play + Salva album ---------- */
   const AZIONI = creaElemento("div", "hero-actions d-flex align-items-center gap-3", META);
   const PRIMA_TRACCIA = tracks[0];
 
@@ -179,14 +197,30 @@ const RENDER_HERO = (album, tracks) => {
   // e colora di verde la riga .track-row con lo stesso data-track-id
   BOTTONE_PLAY.addEventListener("click", () => PLAYER.play(PRIMA_TRACCIA, tracks));
 
-  // Niente classi colore: .btn-fav-big.is-fav lo colora di rosso in app.css
-  CREA_BOTTONE_CUORE(PRIMA_TRACCIA, AZIONI, "btn-fav-big rounded-circle fs-5");
+  // ⭐ MODIFICA — tolto il cuore della prima traccia (bastano i cuori delle righe).
+  // ⭐ NUOVO — "+ Salva album": aggiunge o toglie l'album dagli "Album preferiti".
+  const BOTTONE_SALVA = creaElemento("button", "btn btn-outline-light btn-sm rounded-pill px-3", AZIONI);
+  BOTTONE_SALVA.type = "button";
+
+  // Scrive il testo giusto in base a cosa c'e' in localStorage
+  const AGGIORNA_SALVA = () => {
+    const SALVATO = IS_FAV_ALBUM(album.id);
+    BOTTONE_SALVA.textContent = SALVATO ? "✓ Salvato" : "+ Salva album";
+    BOTTONE_SALVA.setAttribute("aria-pressed", String(SALVATO)); // per gli screen reader
+  };
+  AGGIORNA_SALVA(); // parte gia' su "✓ Salvato" se l'album era stato salvato
+
+  BOTTONE_SALVA.addEventListener("click", () => {
+    TOGGLE_FAV_ALBUM(album); // salva o toglie l'oggetto Album in localStorage
+    AGGIORNA_SALVA();
+    RENDER_SIDEBAR_FAVS();   // la sidebar si aggiorna subito
+  });
 };
 
 /*
   renderTracklist(tracks)  — punto 6
   Una <li class="track-row d-grid align-items-center"> per traccia. In app.css .track-row e' una
-  griglia a 4 colonne (32px | 1fr | 80px | 48px): numero, titolo, durata, cuore.
+  griglia a 4 colonne (32px | 1fr | 80px | auto): numero, titolo, durata, "Testo" + cuore.
 */
 const RENDER_TRACKLIST = (tracks) => {
   TRACKLIST.replaceChildren();
@@ -206,7 +240,10 @@ const RENDER_TRACKLIST = (tracks) => {
     creaElemento("span", "track-num text-center text-body-secondary", RIGA, indice + 1); // indice parte da 0, il numero da 1
     creaElemento("span", "track-title fw-semibold text-truncate", RIGA, track.title ?? "Brano sconosciuto");
     creaElemento("span", "track-time text-end text-body-secondary", RIGA, FORMAT_TIME(track.durationMs)); // ms -> "m:ss"
-    CREA_BOTTONE_CUORE(track, RIGA, "track-fav border-0 bg-transparent");
+    // ⭐ MODIFICA — "Testo" e cuore insieme nell'ultima colonna della griglia
+    const AZIONI_RIGA = creaElemento("div", "d-flex align-items-center justify-content-end gap-2", RIGA);
+    CREA_LINK_TESTO(track, AZIONI_RIGA);
+    CREA_BOTTONE_CUORE(track, AZIONI_RIGA, "track-fav border-0 bg-transparent");
 
     // Click su tutta la riga -> play (il cuore ferma il click con stopPropagation)
     RIGA.addEventListener("click", () => {
