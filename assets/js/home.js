@@ -134,7 +134,6 @@ const CREA_GRIGLIA_TRACCE = (parent, tracks) => {
       `Riproduci ${track.title} di ${track.artist}`
     );
     PLAY_BUTTON.disabled = !track.previewUrl;
-
   });
 
   /*
@@ -143,7 +142,6 @@ const CREA_GRIGLIA_TRACCE = (parent, tracks) => {
     mettiamo UNO solo sulla griglia. Il click "sale" dal bottone alla card
     alla griglia: closest() dice da dove e' partito, e il data-track-id
     della card dice quale brano e'.
-    Con 12 card per riga: 1 ascoltatore invece di 36.
   */
   const PER_ID = new Map(tracks.map((brano) => [String(brano.id), brano]));
 
@@ -159,7 +157,7 @@ const CREA_GRIGLIA_TRACCE = (parent, tracks) => {
       TOGGLE_FAVOURITE(TRACK);
       RENDER_SIDEBAR_FAVS(); // la lista nella sidebar
       AGGIORNA_CUORI(TRACK); // tutti i cuori di questo brano, anche nelle altre righe
-      AGGIORNA_PREFERITI(); // la riga "I tuoi preferiti"
+      AGGIORNA_PREFERITI(); // la sezione "I tuoi preferiti"
       return;
     }
 
@@ -167,7 +165,7 @@ const CREA_GRIGLIA_TRACCE = (parent, tracks) => {
     const BOTTONE = event.target.closest("button");
     if (BOTTONE && !BOTTONE.classList.contains("card-play")) return;
 
-    // Bottone verde, oppure un punto qualsiasi della card
+    // Bottone play, oppure un punto qualsiasi della card
     if (TRACK.previewUrl) PLAYER.play(TRACK, tracks); // la coda e' la riga da cui parto
   });
 
@@ -456,7 +454,7 @@ creaElemento("p", "text-body-secondary m-0", PRIMO_PIANO_CORPO, "Caricamento..."
   RENDER_PRIMO_PIANO(brani)
   - Mette in evidenza il primo brano della lista con copertina, titolo,
     artista e un bottone che fa partire tutta la lista come coda ("mix").
-  - Se la lista e' vuota usa preferiti o cronologia; se non c'e' niente, nasconde il pannello.
+  - Se la lista è vuota usa preferiti o cronologia; se non c'è niente, nasconde il pannello.
 */
 const RENDER_PRIMO_PIANO = (brani) => {
   let lista = brani.filter((t) => t.previewUrl);
@@ -501,18 +499,20 @@ const RENDER_PRIMO_PIANO = (brani) => {
 const CODA_COL = creaElemento("div", "col-12 col-lg-5", PANNELLI);
 const CODA_PANNELLO = creaElemento("section", "h-100 bg-body-tertiary border rounded-4 p-4", CODA_COL);
 TESTATA_SEZIONE(CODA_PANNELLO, "In riproduzione").classList.replace("mt-5", "mt-0");
-const CODA_LISTA = creaElemento("ul", "list-unstyled m-0", CODA_PANNELLO);
+const CODA_LISTA = creaElemento("ul", "list-unstyled m-0 overflow-y-auto position-relative", CODA_PANNELLO);
+CODA_LISTA.style.maxHeight = "280px"; // oltre questa altezza la lista scorre, non esce dalla card
 
 /*
   RENDER_CODA()
-  ⭐ MODIFICA — prima mostrava 5 brani PARTENDO da quello in ascolto, quindi a ogni
-  "successivo" la lista slittava (il brano dopo diventava il primo).
-  Ora mostra la coda SEMPRE nello stesso ordine: cambia solo quale riga e' accesa.
-  - Ogni riga e' un <button>: click (o Invio da tastiera) = suona quel brano restando nella stessa coda.
+  - Mostra tutta la coda del player, nel suo ordine (01 = primo brano della coda).
+  - Il brano in ascolto e' acceso (lime e grassetto) e la lista scorre da sola
+    per portarlo al centro: con ⏮ / ⏭ del player la riga accesa si sposta
+    e la lista la segue.
+  - Ogni riga e' un <button>: click = suona quel brano restando nella stessa coda.
   - Viene richiamata a ogni "cambio-brano" (evento lanciato da Player.play in common.js).
-  - (tolta la costante MAX_CODA = 5: ora si vede tutta la coda, non serve piu')
 */
 const RENDER_CODA = () => {
+  const SCROLL_PRIMA = CODA_LISTA.scrollTop; // dove era scorsa la lista: svuotandola tornerebbe in cima
   CODA_LISTA.replaceChildren();
 
   const CODA = PLAYER.coda;
@@ -521,30 +521,41 @@ const RENDER_CODA = () => {
     return;
   }
 
-  // Scorro la coda SEMPRE nello stesso ordine: cambia solo quale riga e' accesa
-  CODA.forEach((brano, indice) => {
+  let rigaAttuale = null; // la riga del brano in ascolto, se c'e'
+
+  CODA.forEach((BRANO, i) => {
     const RIGA = creaElemento("li", "border-top", CODA_LISTA);
     const BOTTONE = creaElemento("button", "queue-btn w-100 d-flex justify-content-between gap-3 bg-transparent border-0 text-start small py-2 px-1", RIGA);
     BOTTONE.type = "button";
-    BOTTONE.setAttribute("aria-label", `Riproduci ${brano.title} di ${brano.artist}`);
+    BOTTONE.setAttribute("aria-label", `Riproduci ${BRANO.title} di ${BRANO.artist}`);
 
     // Il brano in ascolto e' acceso (lime e grassetto)
-    if (PLAYER.currentTrack && PLAYER.currentTrack.id === brano.id) {
+    if (PLAYER.currentTrack && PLAYER.currentTrack.id === BRANO.id) {
       BOTTONE.classList.add("is-current", "fw-bold");
+      rigaAttuale = RIGA;
     }
 
-    // Il numero e' la posizione vera nella coda: 01, 02, 03...
-    // padStart(2, "0"): 1 -> "01", 12 -> "12" (prima era `0${i + 1}`, che dava "010", "011"...)
-    const NUMERO = String(indice + 1).padStart(2, "0");
-
     const TITOLO = creaElemento("span", "text-truncate", BOTTONE);
+    // 01, 02 ... 09, poi 10, 11: lo zero davanti solo sotto il 10
+    const NUMERO = i + 1 < 10 ? `0${i + 1}` : `${i + 1}`;
     creaElemento("span", "text-body-secondary fw-normal me-2", TITOLO, NUMERO);
-    creaElemento("span", "queue-title", TITOLO, brano.title);
-    creaElemento("span", "text-body-secondary fw-normal flex-shrink-0", BOTTONE, `${brano.artist} · ${FORMAT_TIME(brano.durationMs)}`);
+    creaElemento("span", "queue-title", TITOLO, BRANO.title);
+    creaElemento("span", "text-body-secondary fw-normal flex-shrink-0", BOTTONE, `${BRANO.artist} · ${FORMAT_TIME(BRANO.durationMs)}`);
 
     // play() sul brano gia' in ascolto fa play/pausa: va bene anche qui
-    BOTTONE.addEventListener("click", () => PLAYER.play(brano, CODA));
+    BOTTONE.addEventListener("click", () => PLAYER.play(BRANO, CODA));
   });
+
+  // Rimetto la lista dov'era scorsa, poi la faccio scorrere (morbida) fino
+  // al brano in ascolto, al centro del riquadro. Stesso calcolo di CENTRA_RIGA
+  // in track.js: offsetTop funziona perche' la lista ha position-relative.
+  CODA_LISTA.scrollTop = SCROLL_PRIMA;
+  if (rigaAttuale) {
+    CODA_LISTA.scrollTo({
+      top: rigaAttuale.offsetTop - CODA_LISTA.clientHeight / 2 + rigaAttuale.offsetHeight / 2,
+      behavior: "smooth",
+    });
+  }
 };
 
 RENDER_CODA();
