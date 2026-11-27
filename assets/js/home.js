@@ -7,6 +7,13 @@ import {
   GET_HISTORY,
   RENDER_SIDEBAR_FAVS,
   AGGIORNA_CARD_PLAY,
+  GET_FAV_ALBUMS,     // ⭐ NUOVO — filtro "Album" dei preferiti
+  IS_FAV_ALBUM,       // ⭐ NUOVO — cuore sulle card album
+  TOGGLE_FAV_ALBUM,   // ⭐ NUOVO
+  GET_FAV_ARTISTS,    // ⭐ NUOVO — filtro "Artisti" dei preferiti
+  IS_FAV_ARTIST,      // ⭐ NUOVO — cuore sulle card artista
+  TOGGLE_FAV_ARTIST,  // ⭐ NUOVO
+  CERCA_INFO_ARTISTA, // ⭐ NUOVO — foto degli artisti (come nella ricerca)
 
   creaElemento,
   FETCH_JSON,
@@ -23,7 +30,7 @@ import {
    1) INIT_PAGE("home")  // monta sidebar + player
    2) Costruisce la .home in quest'ordine:
         - Benvenuto (data di oggi, titolo, sottotitolo)
-        - "I tuoi preferiti" (da getFavourites()) -- solo se non vuota
+        - "I tuoi preferiti" con i filtri Tracce / Album / Artisti -- solo se c'e' almeno un preferito
         - "Riascolta"        (da getHistory())    -- solo se non vuota
         - Due pannelli affiancati:
             "In primo piano" -> il primo dei suggerimenti hits, con "Riproduci mix"
@@ -68,24 +75,20 @@ const TESTATA_SEZIONE = (parent, titolo, nota) => {
   return HEAD;
 };
 
+// Griglia Bootstrap: 2 card per riga su telefono, 3-4 su tablet, 5-6 su portatile, 8 su schermi grandi.
+// Le colonne calano ma la copertina resta quadrata (aspect-ratio in app.css).
+// ⭐ MODIFICA — salvata in una costante: ora la usano anche le griglie di album e artisti preferiti
+const CLASSI_GRIGLIA = "row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 row-cols-xl-6 row-cols-xxl-8 g-2 g-md-3";
+
 /*
-  renderRow(rowTitle, tracks, idSezione, parent, nota)
-  - crea una <section> con testata e una griglia di card (.card-grid in app.css)
+  CREA_GRIGLIA_TRACCE(parent, tracks)
+  ⭐ MODIFICA — e' la parte "griglia + card + event delegation" che prima stava
+  dentro renderRow, IDENTICA, spostata in una funzione sua: cosi' la usano sia
+  renderRow sia la sezione preferiti (filtro "Tracce").
   - una card per ogni track: cover, titolo, artista, bottone play, bottone cuore
-  - se l'array è vuoto non crea niente (nessuna sezione vuota con solo il titolo)
 */
-const RENDER_ROW = (rowTitle, tracks, idSezione, parent = RIGHE_SUGGERITE, nota) => {
-  if (!tracks || tracks.length === 0) return;
-
-  const SECTION = creaElemento("section", undefined, parent);
-  if (idSezione) {
-    SECTION.id = idSezione;
-  }
-  TESTATA_SEZIONE(SECTION, rowTitle, nota);
-
-  // Griglia Bootstrap: 2 card per riga su telefono, 3-4 su tablet, 5-6 su portatile, 8 su schermi grandi.
-  // Le colonne calano ma la copertina resta quadrata (aspect-ratio in app.css).
-  const GRID = creaElemento("div", "row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 row-cols-xl-6 row-cols-xxl-8 g-2 g-md-3", SECTION);
+const CREA_GRIGLIA_TRACCE = (parent, tracks) => {
+  const GRID = creaElemento("div", CLASSI_GRIGLIA, parent);
 
   tracks.forEach((track) => {
     const COLUMN = creaElemento("div", "col", GRID);
@@ -123,20 +126,6 @@ const RENDER_ROW = (rowTitle, tracks, idSezione, parent = RIGHE_SUGGERITE, nota)
       `${GIA_PREFERITO ? "Rimuovi" : "Aggiungi"} ${track.title} ${GIA_PREFERITO ? "dai" : "ai"
       } preferiti`
     );
-    //clicco dei favoriti
-    FAV_BUTTON.addEventListener("click", (event) => {
-      event.stopPropagation();
-
-      // Aggiunge o rimuove il brano dai preferiti
-      TOGGLE_FAVOURITE(track);
-      const ORA = IS_FAVOURITE(track.id); // rileggo lo stato aggiornato
-      FAV_BUTTON.classList.toggle("is-fav", ORA);
-      FAV_BUTTON.textContent = ORA ? "♥" : "♡";
-      RENDER_SIDEBAR_FAVS(); // aggiorno anche la lista nella sidebar
-      AGGIORNA_CUORI(track);
-      AGGIORNA_PREFERITI();
-    });
-
     // Bottone play (compare al passaggio del mouse, vedi .card:hover in app.css)
     const PLAY_BUTTON = creaElemento("button", "card-play position-absolute rounded-circle border-0 d-flex align-items-center justify-content-center", IMAGE_WRAP, "▶");
     PLAY_BUTTON.type = "button";
@@ -150,7 +139,7 @@ const RENDER_ROW = (rowTitle, tracks, idSezione, parent = RIGHE_SUGGERITE, nota)
       event.stopPropagation();
 
       if (track.previewUrl) {
-        PLAYER.play(track, tracks); // la coda è la riga da cui parto
+        PLAYER.play(track, tracks); // la coda e' la riga da cui parto
       }
     });
 
@@ -159,34 +148,247 @@ const RENDER_ROW = (rowTitle, tracks, idSezione, parent = RIGHE_SUGGERITE, nota)
       if (event.target.closest("button")) return;
 
       if (track.previewUrl) {
-        PLAYER.play(track, tracks); // la coda è la riga da cui parto
+        PLAYER.play(track, tracks); // la coda e' la riga da cui parto
       }
     });
   });
 
   AGGIORNA_CARD_PLAY(); // le card nuove partono con l'icona giusta (▶ o ⏸)
-  return SECTION;
+  return GRID;
 };
 
 /*
-  NOTA_PREFERITI(n)
-  - "1 brano salvato" / "8 brani salvati"
+  renderRow(rowTitle, tracks, idSezione, parent, nota)
+  - crea una <section> con testata e una griglia di card
+  - se l'array è vuoto non crea niente (nessuna sezione vuota con solo il titolo)
+  ⭐ MODIFICA — la griglia ora la crea CREA_GRIGLIA_TRACCE (stesso risultato di prima)
 */
-const NOTA_PREFERITI = (n) => (n === 1 ? "1 brano salvato" : `${n} brani salvati`);
+const RENDER_ROW = (rowTitle, tracks, idSezione, parent = RIGHE_SUGGERITE, nota) => {
+  if (!tracks || tracks.length === 0) return;
 
+  const SECTION = creaElemento("section", undefined, parent);
+  if (idSezione) {
+    SECTION.id = idSezione;
+  }
+  TESTATA_SEZIONE(SECTION, rowTitle, nota);
+  CREA_GRIGLIA_TRACCE(SECTION, tracks);
+
+  return SECTION;
+};
+
+/* ============================ Card di album e artisti ============================ */
+
+// ⭐ NUOVO
+/*
+  RENDI_CARD_LINK(card, indirizzo, etichetta)
+  - Fa comportare una card <article> come un link (stessa funzione di search.js):
+    click -> apre "indirizzo", tranne quando il click arriva dal cuore.
+  - role="link" + tabIndex = 0: si raggiunge col Tab e si apre con Invio.
+*/
+const RENDI_CARD_LINK = (card, indirizzo, etichetta) => {
+  card.setAttribute("role", "link");
+  card.tabIndex = 0;
+  card.setAttribute("aria-label", etichetta);
+
+  const VAI = () => {
+    window.location.href = indirizzo;
+  };
+
+  card.addEventListener("click", (event) => {
+    if (event.target.closest("button")) return; // click sul cuore: non navigo
+    VAI();
+  });
+
+  card.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && event.target === card) VAI();
+  });
+};
+
+// ⭐ NUOVO
+/*
+  CREA_CUORE_CARD(genitore, nome, eGiaPreferito, alClick)
+  - Cuore per le card di album e artisti (stesse classi del cuore delle tracce).
+  - Dopo il click ridisegno sidebar E sezione preferiti: se tolgo un album
+    stando nel filtro "Album", la sua card sparisce subito.
+*/
+const CREA_CUORE_CARD = (genitore, nome, eGiaPreferito, alClick) => {
+  const BOTTONE = creaElemento(
+    "button",
+    "card-fav position-absolute rounded-circle border-0 d-flex align-items-center justify-content-center",
+    genitore
+  );
+  BOTTONE.type = "button";
+
+  const AGGIORNA = () => {
+    const PREFERITO = eGiaPreferito();
+    BOTTONE.classList.toggle("is-fav", PREFERITO);
+    BOTTONE.textContent = PREFERITO ? "♥" : "♡";
+    BOTTONE.setAttribute("aria-pressed", String(PREFERITO));
+    BOTTONE.setAttribute("aria-label", `${PREFERITO ? "Rimuovi" : "Aggiungi"} ${nome} ${PREFERITO ? "dai" : "ai"} preferiti`);
+  };
+  AGGIORNA();
+
+  BOTTONE.addEventListener("click", (event) => {
+    event.stopPropagation(); // non deve aprire la pagina della card
+    alClick();
+    AGGIORNA();
+    RENDER_SIDEBAR_FAVS();
+    AGGIORNA_PREFERITI();
+  });
+};
+
+// ⭐ NUOVO
+/*
+  CARICA_FOTO_ARTISTA(imageWrap, nome)
+  - Come in search.js: chiede la foto a TheAudioDB e, quando e' caricata del
+    tutto, la mette nel cerchio al posto del 🎤. Prima /medium, poi l'originale.
+*/
+const CARICA_FOTO_ARTISTA = async (imageWrap, nome) => {
+  const INFO = await CERCA_INFO_ARTISTA(nome);
+  const FOTO = INFO?.foto;
+  if (!FOTO) return; // niente foto: resta il 🎤
+
+  const IMAGE = creaElemento("img", "w-100 h-100 object-fit-cover d-block");
+  IMAGE.alt = nome;
+  IMAGE.addEventListener("load", () => imageWrap.replaceChildren(IMAGE), { once: true });
+  IMAGE.addEventListener("error", () => (IMAGE.src = FOTO), { once: true });
+  IMAGE.src = `${FOTO}/medium`;
+};
+
+// ⭐ NUOVO
+/*
+  CREA_CARD_ALBUM(album, grid)
+  - Card di un album, con lo stile delle card della home (cuore dentro la copertina).
+  - Click sulla card -> pagina dell'album.
+*/
+const CREA_CARD_ALBUM = (album, grid) => {
+  const COLUMN = creaElemento("div", "col", grid);
+  const CARD = creaElemento("article", "card h-100 border-0 position-relative p-2", COLUMN);
+  RENDI_CARD_LINK(CARD, `album.html?id=${album.id}`, `Apri l'album ${album.title}`);
+
+  const IMAGE_WRAP = creaElemento("div", "card-image-wrap position-relative w-100 overflow-hidden", CARD);
+  const IMAGE = creaElemento("img", "w-100 h-100 object-fit-cover d-block", IMAGE_WRAP);
+  IMAGE.src = BIG_ART(album.cover);
+  IMAGE.alt = album.title ?? "";
+  IMAGE.loading = "lazy";
+
+  creaElemento("p", "card-title fw-bold text-truncate mt-0 mb-1 px-1", CARD, album.title);
+  creaElemento("p", "card-sub text-body-secondary text-truncate small mb-1 px-1", CARD, album.artist);
+
+  CREA_CUORE_CARD(IMAGE_WRAP, album.title, () => IS_FAV_ALBUM(album.id), () => TOGGLE_FAV_ALBUM(album));
+};
+
+// ⭐ NUOVO
+/*
+  CREA_CARD_ARTISTA(artist, grid)
+  - Card di un artista: cerchio con 🎤 (poi la foto di TheAudioDB), nome, genere.
+  - Il cuore sta sulla CARD e non nel cerchio: quando arriva la foto,
+    CARICA_FOTO_ARTISTA sostituisce tutto il contenuto del cerchio.
+*/
+const CREA_CARD_ARTISTA = (artist, grid) => {
+  const COLUMN = creaElemento("div", "col", grid);
+  const CARD = creaElemento("article", "card h-100 border-0 position-relative p-2", COLUMN);
+  RENDI_CARD_LINK(CARD, `artist.html?id=${artist.id}`, `Apri l'artista ${artist.name}`);
+
+  const IMAGE_WRAP = creaElemento("div", "card-image-wrap position-relative w-100 overflow-hidden round", CARD);
+  creaElemento("div", "w-100 h-100 d-flex align-items-center justify-content-center fs-1", IMAGE_WRAP, "🎤");
+
+  creaElemento("p", "card-title fw-bold text-truncate mt-0 mb-1 px-1", CARD, artist.name);
+  creaElemento("p", "card-sub text-body-secondary text-truncate small mb-1 px-1", CARD, artist.genre || "Artista");
+
+  CREA_CUORE_CARD(CARD, artist.name, () => IS_FAV_ARTIST(artist.id), () => TOGGLE_FAV_ARTIST(artist));
+  CARICA_FOTO_ARTISTA(IMAGE_WRAP, artist.name);
+};
+
+/* ============================ I tuoi preferiti (con filtri) ============================ */
+
+// ⭐ NUOVO — quale filtro e' attivo. let perche' cambia ai click. Si parte da "tracce".
+let filtroPreferiti = "tracce";
+
+// ⭐ NUOVO — i tre bottoni filtro: chiave, testo del bottone, messaggio se vuoto,
+// nota a destra del titolo (prima c'era solo "n brani salvati")
+const FILTRI_PREFERITI = [
+  { chiave: "tracce", etichetta: "Tracce", vuoto: "Nessun brano tra i preferiti", nota: (n) => (n === 1 ? "1 brano salvato" : `${n} brani salvati`) },
+  { chiave: "album", etichetta: "Album", vuoto: "Nessun album tra i preferiti", nota: (n) => (n === 1 ? "1 album salvato" : `${n} album salvati`) },
+  { chiave: "artisti", etichetta: "Artisti", vuoto: "Nessun artista tra i preferiti", nota: (n) => (n === 1 ? "1 artista seguito" : `${n} artisti seguiti`) },
+];
+
+/*
+  AGGIORNA_PREFERITI()
+  ⭐ MODIFICA — stesso nome di prima (la chiamano gia' i cuori), ma ora disegna
+  la sezione con i tre filtri:
+      [I tuoi preferiti] [Tracce] [Album] [Artisti]            n brani salvati
+      griglia del filtro attivo
+  - La sezione compare se c'e' ALMENO un preferito di qualsiasi tipo, cosi' i
+    bottoni restano raggiungibili anche se la categoria scelta e' vuota.
+  - Sta sempre in cima, prima di "Riascolta" (prepend), come prima.
+*/
 const AGGIORNA_PREFERITI = () => {
-  const VECCHIA = document.querySelector("#sezione-preferiti");
-  if (VECCHIA) {
-    VECCHIA.remove();
+  document.querySelector("#sezione-preferiti")?.remove(); // tolgo la versione vecchia
+
+  // Le chiavi sono le stesse di FILTRI_PREFERITI: ELENCHI[filtroPreferiti] = lista giusta
+  const ELENCHI = {
+    tracce: GET_FAVOURITES(),
+    album: GET_FAV_ALBUMS(),
+    artisti: GET_FAV_ARTISTS(),
+  };
+  const TOTALE = ELENCHI.tracce.length + ELENCHI.album.length + ELENCHI.artisti.length;
+  if (TOTALE === 0) return; // nessun preferito: niente sezione
+
+  const FILTRO = FILTRI_PREFERITI.find((filtro) => filtro.chiave === filtroPreferiti);
+  const ELENCO = ELENCHI[filtroPreferiti];
+
+  const SECTION = creaElemento("section", undefined, undefined, undefined, "sezione-preferiti");
+  RIGHE_PERSONALI.prepend(SECTION);
+
+  /* ---------- Testata: titolo + filtri a sinistra, nota a destra ---------- */
+  const HEAD = TESTATA_SEZIONE(SECTION, "I tuoi preferiti", FILTRO.nota(ELENCO.length));
+  HEAD.classList.replace("align-items-baseline", "align-items-center"); // bottoni e titolo centrati in verticale
+
+  // Sposto il titolo in un contenitore insieme ai bottoni (appendChild SPOSTA un elemento gia' esistente)
+  const SINISTRA = creaElemento("div", "d-flex flex-wrap align-items-center gap-3");
+  HEAD.prepend(SINISTRA);
+  SINISTRA.appendChild(HEAD.querySelector("h2"));
+
+  const GRUPPO = creaElemento("div", "d-flex gap-2", SINISTRA);
+  GRUPPO.setAttribute("role", "group");
+  GRUPPO.setAttribute("aria-label", "Filtra i preferiti");
+
+  FILTRI_PREFERITI.forEach(({ chiave, etichetta }) => {
+    const ATTIVO = chiave === filtroPreferiti;
+    // btn-accent (lime, definito in app.css) = attivo; btn-outline-secondary = spento
+    const BOTTONE = creaElemento(
+      "button",
+      `btn btn-sm rounded-pill fw-semibold px-3 ${ATTIVO ? "btn-accent" : "btn-outline-secondary"}`,
+      GRUPPO,
+      etichetta
+    );
+    BOTTONE.type = "button";
+    BOTTONE.setAttribute("aria-pressed", String(ATTIVO));
+
+    BOTTONE.addEventListener("click", () => {
+      if (chiave === filtroPreferiti) return; // gia' attivo
+      filtroPreferiti = chiave;
+      AGGIORNA_PREFERITI(); // ridisegno la sezione con il nuovo filtro
+    });
+  });
+
+  /* ---------- Contenuto del filtro attivo ---------- */
+  if (ELENCO.length === 0) {
+    creaElemento("p", "small text-body-secondary m-0", SECTION, FILTRO.vuoto);
+    return;
   }
 
-  const PREFERITI = GET_FAVOURITES();
-  RENDER_ROW("I tuoi preferiti", PREFERITI, "sezione-preferiti", RIGHE_PERSONALI, NOTA_PREFERITI(PREFERITI.length));
+  if (filtroPreferiti === "tracce") {
+    CREA_GRIGLIA_TRACCE(SECTION, ELENCO); // stesse card di prima, con play e cuore
+    return;
+  }
 
-  // I preferiti stanno sempre in cima, prima di "Riascolta"
-  const NUOVA = document.querySelector("#sezione-preferiti");
-  if (NUOVA) {
-    RIGHE_PERSONALI.prepend(NUOVA);
+  const GRID = creaElemento("div", CLASSI_GRIGLIA, SECTION);
+  if (filtroPreferiti === "album") {
+    ELENCO.forEach((album) => CREA_CARD_ALBUM(album, GRID));
+  } else {
+    ELENCO.forEach((artista) => CREA_CARD_ARTISTA(artista, GRID));
   }
 };
 
@@ -203,6 +405,13 @@ const AGGIORNA_CUORI = (track) => {
     } else {
       CUORE.textContent = "♡";
     }
+
+    // Anche l'etichetta per gli screen reader: senza questa resta quella di
+    // quando la card e' nata, e direbbe "Aggiungi" su un cuore gia' pieno.
+    CUORE.setAttribute(
+      "aria-label",
+      `${ORA ? "Rimuovi" : "Aggiungi"} ${track.title} ${ORA ? "dai" : "ai"} preferiti`
+    );
   });
 };
 
@@ -279,9 +488,10 @@ CODA_LISTA.style.maxHeight = "280px"; // oltre questa altezza la lista scorre, n
 
 /*
   RENDER_CODA()
-  - Mostra tutta la coda del player SEMPRE nello stesso ordine: cambia solo la riga accesa.
-  - Ogni riga è un <button>: click (o Invio da tastiera) = suona quel brano restando nella stessa coda.
+  - Mostra fino a 5 brani della coda del player, partendo da quello in ascolto.
+  - Ogni riga e' un <button>: click (o Invio da tastiera) = suona quel brano restando nella stessa coda.
   - Viene richiamata a ogni "cambio-brano" (evento lanciato da Player.play in common.js).
+  - (tolta la costante MAX_CODA = 5: ora si vede tutta la coda, non serve piu')
 */
 const RENDER_CODA = () => {
   const SCROLL_PRIMA = CODA_LISTA.scrollTop; // dove era scorsa la lista: svuotandola tornerebbe in cima
@@ -293,43 +503,30 @@ const RENDER_CODA = () => {
     return;
   }
 
-  // Scorro la coda SEMPRE nello stesso ordine: cambia solo quale riga è accesa
-  CODA.forEach((brano, indice) => {
+  // Parto dal brano corrente (se c'e') cosi' vedo "questo + i prossimi"
+  const INIZIO = Math.max(0, PLAYER.indiceInCoda());
+  const QUANTI = Math.min(MAX_CODA, CODA.length);
+
+  for (let i = 0; i < QUANTI; i++) {
+    const BRANO = CODA[(INIZIO + i) % CODA.length]; // % = arrivato in fondo riparto dall'inizio
+
     const RIGA = creaElemento("li", "border-top", CODA_LISTA);
     const BOTTONE = creaElemento("button", "queue-btn w-100 d-flex justify-content-between gap-3 bg-transparent border-0 text-start small py-2 px-1", RIGA);
     BOTTONE.type = "button";
     BOTTONE.setAttribute("aria-label", `Riproduci ${brano.title} di ${brano.artist}`);
 
-    // Il brano in ascolto è acceso (lime e grassetto)
-    if (PLAYER.currentTrack && PLAYER.currentTrack.id === brano.id) {
+    // Il brano in ascolto e' acceso (lime e grassetto)
+    if (PLAYER.currentTrack && PLAYER.currentTrack.id === BRANO.id) {
       BOTTONE.classList.add("is-current", "fw-bold");
     }
 
-    // Il numero è la posizione vera nella coda: 01, 02, 03...
-    const NUMERO = String(indice + 1).padStart(2, "0");
-
     const TITOLO = creaElemento("span", "text-truncate", BOTTONE);
-    creaElemento("span", "text-body-secondary fw-normal me-2", TITOLO, NUMERO);
-    creaElemento("span", "queue-title", TITOLO, brano.title);
-    creaElemento("span", "text-body-secondary fw-normal flex-shrink-0", BOTTONE, `${brano.artist} · ${FORMAT_TIME(brano.durationMs)}`);
+    creaElemento("span", "text-body-secondary fw-normal me-2", TITOLO, `0${i + 1}`);
+    creaElemento("span", "queue-title", TITOLO, BRANO.title);
+    creaElemento("span", "text-body-secondary fw-normal flex-shrink-0", BOTTONE, `${BRANO.artist} · ${FORMAT_TIME(BRANO.durationMs)}`);
 
-    BOTTONE.addEventListener("click", () => PLAYER.play(brano, CODA));
-  });
-
-  // La lista è stata ricostruita: rimetto lo scroll dov'era...
-  CODA_LISTA.scrollTop = SCROLL_PRIMA;
-
-  // ...e poi faccio scorrere fino al brano acceso, cosi' lo segue anche con ⏮ ⏭
-  const ACCESO = CODA_LISTA.querySelector(".is-current");
-  if (ACCESO) {
-    const RIGA_ACCESA = ACCESO.parentElement; // il <li> che contiene il bottone
-    // offsetTop = distanza del <li> dall'inizio della lista (serve position-relative sul <ul>).
-    // Tolgo meta' altezza della lista e aggiungo meta' altezza della riga:
-    // cosi' il CENTRO della riga va al CENTRO della lista (stessa idea di CENTRA_RIGA in track.js).
-    CODA_LISTA.scrollTo({
-      top: RIGA_ACCESA.offsetTop - CODA_LISTA.clientHeight / 2 + RIGA_ACCESA.offsetHeight / 2,
-      behavior: "smooth",
-    });
+    // play() sul brano gia' in ascolto fa play/pausa: va bene anche qui
+    BOTTONE.addEventListener("click", () => PLAYER.play(BRANO, CODA));
   }
 };
 
@@ -344,7 +541,7 @@ const CARICA_SUGGERIMENTI = async (termine) => {
     const DATI = await FETCH_JSON(URL);// fa la richiesta e trasforma la risposta in un oggetto JS
     const BRANI = DATI.results.map((raw) => new Track(raw));// da ogni risultato "grezzo" dell'API crea un oggetto Track, in un nuovo array
 
-    BRANI.sort(() => Math.random() - 0.5);//album radom
+    BRANI.sort(() => Math.random() - 0.5); // ordine diverso a ogni caricamento
     return BRANI.slice(0, 6); // 6 = una riga piena della griglia su desktop
 
   } catch (err) {
