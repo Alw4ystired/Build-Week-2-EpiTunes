@@ -12,6 +12,8 @@ import {
   RENDER_SIDEBAR_FAVS,
   API_BASE,
   CERCA_INFO_ARTISTA, // per foto artista + follower
+  IS_FAV_ARTIST,      // ⭐ NUOVO — l'artista e' gia' seguito?
+  TOGGLE_FAV_ARTIST,  // ⭐ NUOVO — segui / smetti di seguire
 } from "./common.js";
 
 /* ============================================================
@@ -126,6 +128,20 @@ const CREA_BOTTONE_CUORE = (track, genitore, classi) => {
   return BOTTONE;
 };
 
+// ⭐ NUOVO — identica ad album.js
+/*
+  CREA_LINK_TESTO(track, genitore)
+  - Bottoncino "Testo" che apre la pagina del brano (track.html) con il testo scorrevole.
+  - stopPropagation: il link sta DENTRO la riga, che al click fa partire il brano.
+*/
+const CREA_LINK_TESTO = (track, genitore) => {
+  const LINK = creaElemento("a", "btn btn-outline-light btn-sm rounded-pill py-0 px-2", genitore, "Testo");
+  LINK.href = `track.html?id=${track.id}`;
+  LINK.setAttribute("aria-label", `Testo di ${track.title}`);
+  LINK.addEventListener("click", (event) => event.stopPropagation());
+  return LINK;
+};
+
 /* ============================ RENDER ============================ */
 
 /*
@@ -179,6 +195,23 @@ const RENDER_HERO = (artist, tracks) => {
   // e colora di verde la riga .track-row con lo stesso data-track-id
   BOTTONE_PLAY.addEventListener("click", () => PLAYER.play(PRIMA_TRACCIA, tracks));
 
+  // ⭐ NUOVO — "Segui": aggiunge o toglie l'artista dagli "Artisti preferiti".
+  const BOTTONE_SEGUI = creaElemento("button", "btn btn-outline-light btn-sm rounded-pill px-3", AZIONI);
+  BOTTONE_SEGUI.type = "button";
+
+  const AGGIORNA_SEGUI = () => {
+    const SEGUITO = IS_FAV_ARTIST(artist.id);
+    BOTTONE_SEGUI.textContent = SEGUITO ? "✓ Segui già" : "Segui";
+    BOTTONE_SEGUI.setAttribute("aria-pressed", String(SEGUITO));
+  };
+  AGGIORNA_SEGUI(); // parte gia' su "✓ Segui già" se l'artista era seguito
+
+  BOTTONE_SEGUI.addEventListener("click", () => {
+    TOGGLE_FAV_ARTIST(artist); // salva o toglie l'oggetto Artist in localStorage
+    AGGIORNA_SEGUI();
+    RENDER_SIDEBAR_FAVS();     // la sidebar si aggiorna subito
+  });
+
   return { IMMAGINE, CONTEGGIO };
 };
 
@@ -212,7 +245,10 @@ const RENDER_TOP_TRACKS = (tracks) => {
     creaElemento("span", "track-num text-center text-body-secondary", RIGA, indice + 1); // posizione in classifica
     creaElemento("span", "track-title fw-semibold text-truncate", RIGA, track.title ?? "Brano sconosciuto");
     creaElemento("span", "track-time text-end text-body-secondary", RIGA, FORMAT_TIME(track.durationMs)); // ms -> "m:ss"
-    CREA_BOTTONE_CUORE(track, RIGA, "track-fav border-0 bg-transparent");
+    // ⭐ MODIFICA — "Testo" e cuore insieme nell'ultima colonna della griglia
+    const AZIONI_RIGA = creaElemento("div", "d-flex align-items-center justify-content-end gap-2", RIGA);
+    CREA_LINK_TESTO(track, AZIONI_RIGA);
+    CREA_BOTTONE_CUORE(track, AZIONI_RIGA, "track-fav border-0 bg-transparent");
 
     // Click su tutta la riga -> play (il cuore ferma il click con stopPropagation)
     RIGA.addEventListener("click", () => {
