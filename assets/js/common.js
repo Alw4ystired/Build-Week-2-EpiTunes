@@ -1287,16 +1287,16 @@ export {
   GET_RECENT_SEARCHES,
   ADD_RECENT_SEARCH,
   REMOVE_RECENT_SEARCH,
-  GET_FAV_ALBUMS,    // ⭐ NUOVO — home.js (filtro "Album")
-  IS_FAV_ALBUM,      // ⭐ NUOVO — album.js, search.js, home.js
-  TOGGLE_FAV_ALBUM,  // ⭐ NUOVO
-  GET_FAV_ARTISTS,   // ⭐ NUOVO — home.js (filtro "Artisti")
-  IS_FAV_ARTIST,     // ⭐ NUOVO — artist.js, search.js, home.js
-  TOGGLE_FAV_ARTIST, // ⭐ NUOVO
+  GET_FAV_ALBUMS,    // home.js (filtro "Album")
+  IS_FAV_ALBUM,      // album.js, search.js, home.js
+  TOGGLE_FAV_ALBUM,  // 
+  GET_FAV_ARTISTS,   // home.js (filtro "Artisti")
+  IS_FAV_ARTIST,     // artist.js, search.js, home.js
+  TOGGLE_FAV_ARTIST, //
   // Render
   RENDER_SIDEBAR_FAVS,
   AGGIORNA_CARD_PLAY,
-  CREA_PLAY_E_MISCHIA, // ⭐ NUOVO — album.js e artist.js
+  CREA_PLAY_E_MISCHIA, //album.js e artist.js
   // Inizializzazione
   INIT_PAGE,
 };
