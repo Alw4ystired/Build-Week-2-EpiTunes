@@ -11,16 +11,16 @@
 </head>
 
 <body>
-  <div class="app vh-100">
-    <aside class="sidebar py-4 px-3">
+  <div class="app d-grid vh-100">
+    <aside class="sidebar d-none d-sm-block py-4 px-3 overflow-y-auto">
       <!-- Riempi via JS in common.js -->
     </aside>
 
     <main class="main overflow-y-auto position-relative">
-      <header class="topbar sticky-top d-flex align-items-center justify-content-between px-4">
+      <header class="topbar sticky-top d-flex align-items-center justify-content-between py-3 px-4">
         <div class="topbar-nav d-flex gap-2">
-          <button class="nav-btn rounded-circle border-0 lh-1" aria-label="Indietro">‹</button>
-          <button class="nav-btn rounded-circle border-0 lh-1" aria-label="Avanti">›</button>
+          <button id="btn-indietro" class="nav-btn rounded-circle border-0 lh-1 fs-5" aria-label="Indietro">‹</button>
+          <button id="btn-avanti" class="nav-btn rounded-circle border-0 lh-1 fs-5" aria-label="Avanti">›</button>
         </div>
         <div class="user-pill rounded-pill fw-semibold">Studente Epicode</div>
       </header>
@@ -38,7 +38,7 @@
       </section>
     </main>
 
-    <footer class="player">
+    <footer class="player d-grid align-items-center">
       <!-- Riempi via JS in common.js -->
     </footer>
   </div>
@@ -51,7 +51,7 @@
     integrity="sha384-89aa4glufciPv46aKltztWQEmk+Tu9W2RhzXr6VcnUUEub7F8+06RcL2RYLCOHUq"
     crossorigin="anonymous"></script>
   <script type="module" src="assets/js/home.js"></script>
-  
+
 </body>
 
 </html>

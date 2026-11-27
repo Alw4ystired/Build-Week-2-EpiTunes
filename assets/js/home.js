@@ -1,15 +1,16 @@
 // Importo da common.js solo quello che questo file usa davvero
 import {
-  initPage,
-  getFavourites,
-  toggleFavourite,
-  isFavourite,
-  getHistory,
-  renderSidebarFavs,
+  INIT_PAGE,
+  GET_FAVOURITES,
+  TOGGLE_FAVOURITE,
+  IS_FAVOURITE,
+  GET_HISTORY,
+  RENDER_SIDEBAR_FAVS,
+  AGGIORNA_CARD_PLAY,
 
   creaElemento,
-  fetchJSON,
-  bigArt,
+  FETCH_JSON,
+  BIG_ART,
   Track,
 } from "./common.js";
 
@@ -18,7 +19,7 @@ import {
    ============================================================
 
    COSA DEVI FARE
-   1) initPage("home")  // monta sidebar + player
+   1) INIT_PAGE("home")  // monta sidebar + player
    2) Costruisci queste righe (sezioni) nella .home:
         - "Riprodotti di recente" (da getHistory())  -- mostra solo se non vuota
         - "I tuoi preferiti"       (da getFavourites()) -- mostra solo se non vuota
@@ -31,9 +32,9 @@ import {
    6) Click cover senza play -> link a album.html?id=albumId (opzionale)
 */
 
-const player = initPage("home");
+const PLAYER = INIT_PAGE("home");
 
-const home = document.querySelector(".home");
+const HOME = document.querySelector(".home");
 
 /*
   renderRow(rowTitle, tracks)
@@ -41,99 +42,100 @@ const home = document.querySelector(".home");
   - una card per ogni track: cover, titolo, artista, bottone play, bottone cuore
   - se l'array è vuoto non crea niente (nessuna sezione vuota con solo il titolo)
 */
-const renderRow = (rowTitle, tracks, idSezione) => {
+const RENDER_ROW = (rowTitle, tracks, idSezione) => {
   if (!tracks || tracks.length === 0) return;
 
-  const section = creaElemento("section", "mt-4", home);
+  const SECTION = creaElemento("section", "mt-4", HOME);
   if (idSezione) {
-    section.id = idSezione;
+    SECTION.id = idSezione;
   }
-  creaElemento("h2", "fs-4 fw-bold mb-3", section, rowTitle);
+  creaElemento("h2", "fs-4 fw-bold mb-3", SECTION, rowTitle);
 
-  const grid = creaElemento(
+  const GRID = creaElemento(
     "div",
     "row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-xl-6 g-3",
-    section
+    SECTION
   );
 
   tracks.forEach((track) => {
-    const column = creaElemento("div", "col", grid);
-    const card = creaElemento("article", "card h-100 border-0", column);
-    card.dataset.trackId = String(track.id);
+    const COLUMN = creaElemento("div", "col", GRID);
+    const CARD = creaElemento("article", "card h-100 border-0 position-relative p-3", COLUMN);
+    CARD.dataset.trackId = String(track.id);
 
     // Cover
-    const imageWrap = creaElemento("div", "card-image-wrap", card);
-    const image = creaElemento(
+    const IMAGE_WRAP = creaElemento("div", "card-image-wrap position-relative w-100 overflow-hidden", CARD);
+    const IMAGE = creaElemento(
       "img",
       "w-100 h-100 object-fit-cover d-block",
-      imageWrap
+      IMAGE_WRAP
     );
 
-    image.src = bigArt(track.cover);
-    image.alt = track.title ?? "";
-    image.loading = "lazy";
+    IMAGE.src = BIG_ART(track.cover);
+    IMAGE.alt = track.title ?? "";
+    IMAGE.loading = "lazy";
 
     // Titolo e artista
-    creaElemento("p", "card-title", card, track.title);
-    creaElemento("p", "card-sub", card, track.artist);
+    creaElemento("p", "card-title fw-bold text-truncate mt-0 mb-1 fs-6", CARD, track.title);
+    creaElemento("p", "card-sub text-body-secondary text-truncate m-0 small", CARD, track.artist);
 
     // Cuore
-    const giaPreferito = isFavourite(track.id);
-    const favButton = creaElemento(
+    const GIA_PREFERITO = IS_FAVOURITE(track.id);
+    const FAV_BUTTON = creaElemento(
       "button",
-      giaPreferito ? "card-fav is-fav" : "card-fav",
-      card,
-      giaPreferito ? "♥" : "♡"
+      GIA_PREFERITO ? "card-fav position-absolute rounded-circle border-0 d-flex align-items-center justify-content-center is-fav" : "card-fav position-absolute rounded-circle border-0 d-flex align-items-center justify-content-center",
+      CARD,
+      GIA_PREFERITO ? "♥" : "♡"
     );
 
-    favButton.type = "button";
-    favButton.setAttribute(
+    FAV_BUTTON.type = "button";
+    FAV_BUTTON.setAttribute(
       "aria-label",
-      `${giaPreferito ? "Rimuovi" : "Aggiungi"} ${track.title} ${giaPreferito ? "dai" : "ai"
+      `${GIA_PREFERITO ? "Rimuovi" : "Aggiungi"} ${track.title} ${GIA_PREFERITO ? "dai" : "ai"
       } preferiti`
     );
     //clicco dei favoriti 
-    favButton.addEventListener("click", (event) => {
+    FAV_BUTTON.addEventListener("click", (event) => {
       event.stopPropagation();
 
       // Aggiunge o rimuove il brano dai preferiti
-      toggleFavourite(track);
-      const ora = isFavourite(track.id); // rileggo lo stato aggiornato
-      favButton.classList.toggle("is-fav", ora);
-      favButton.textContent = ora ? "♥" : "♡";
-      renderSidebarFavs(); // aggiorno anche la lista nella sidebar
+      TOGGLE_FAVOURITE(track);
+      const ORA = IS_FAVOURITE(track.id); // rileggo lo stato aggiornato
+      FAV_BUTTON.classList.toggle("is-fav", ORA);
+      FAV_BUTTON.textContent = ORA ? "♥" : "♡";
+      RENDER_SIDEBAR_FAVS(); // aggiorno anche la lista nella sidebar
       AGGIORNA_CUORI(track);
       AGGIORNA_PREFERITI();
     });
 
     // Bottone play
-    const playButton = creaElemento("button", "card-play", card, "▶");
-    playButton.type = "button";
-    playButton.setAttribute(
+    const PLAY_BUTTON = creaElemento("button", "card-play position-absolute rounded-circle border-0 d-flex align-items-center justify-content-center", CARD, "▶");
+    PLAY_BUTTON.type = "button";
+    PLAY_BUTTON.setAttribute(
       "aria-label",
       `Riproduci ${track.title} di ${track.artist}`
     );
-    playButton.disabled = !track.previewUrl;
+    PLAY_BUTTON.disabled = !track.previewUrl;
 
-    playButton.addEventListener("click", (event) => {
+    PLAY_BUTTON.addEventListener("click", (event) => {
       event.stopPropagation();
 
       if (track.previewUrl) {
-        player.play(track);
+        PLAYER.play(track, tracks); // la coda e' la riga da cui parto
       }
     });
 
     // Click sulla card per riprodurre
-    card.addEventListener("click", (event) => {
+    CARD.addEventListener("click", (event) => {
       if (event.target.closest("button")) return;
 
       if (track.previewUrl) {
-        player.play(track);
+        PLAYER.play(track, tracks); // la coda e' la riga da cui parto
       }
     });
   });
 
-  return section;
+  AGGIORNA_CARD_PLAY(); // le card nuove partono con l'icona giusta (▶ o ⏸)
+  return SECTION;
 };
 
 const AGGIORNA_PREFERITI = () => {
@@ -142,17 +144,17 @@ const AGGIORNA_PREFERITI = () => {
     VECCHIA.remove();
   }
 
-  renderRow("I tuoi preferiti", getFavourites(), "sezione-preferiti");
+  RENDER_ROW("I tuoi preferiti", GET_FAVOURITES(), "sezione-preferiti");
 
   const NUOVA = document.querySelector("#sezione-preferiti");
   if (NUOVA) {
-    home.prepend(NUOVA);
+    HOME.prepend(NUOVA);
   }
 }
 
 const AGGIORNA_CUORI = (track) => {
-  const ORA = isFavourite(track.id);
-  const CARTE = document.querySelectorAll(`[data-track-id="${track.id}"]`);
+  const ORA = IS_FAVOURITE(track.id);
+  const CARTE = document.querySelectorAll(`.card[data-track-id="${track.id}"]`);
 
   CARTE.forEach((carta) => {
     const CUORE = carta.querySelector(".card-fav");
@@ -168,57 +170,57 @@ const AGGIORNA_CUORI = (track) => {
 
 /* ---------- I tuoi preferiti ---------- */
 
-const preferiti = getFavourites(); // array di brani salvati in localStorage
-renderRow("I tuoi preferiti", preferiti, "sezione-preferiti"); // se è vuoto, renderRow non mostra niente
+const PREFERITI = GET_FAVOURITES(); // array di brani salvati in localStorage
+RENDER_ROW("I tuoi preferiti", PREFERITI, "sezione-preferiti"); // se è vuoto, renderRow non mostra niente
 
 
 /*Riprodotti di recente*/
-renderRow("Riprodotti di recente", getHistory());
+RENDER_ROW("Riprodotti di recente", GET_HISTORY());
 
 
 /*Suggerimenti*/
 
-const caricaSuggerimenti = async (termine) => {
+const CARICA_SUGGERIMENTI = async (termine) => {
   try {
-    const url = `https://itunes.apple.com/search?term=${encodeURIComponent(termine)}&entity=song&limit=12`;
-    const dati = await fetchJSON(url);// fa la richiesta e trasforma la risposta in un oggetto JS
-    const brani = dati.results.map((raw) => new Track(raw));// da ogni risultato "grezzo" dell'API crea un oggetto Track, in un nuovo array
+    const URL = `https://itunes.apple.com/search?term=${encodeURIComponent(termine)}&entity=song&limit=12`;
+    const DATI = await FETCH_JSON(URL);// fa la richiesta e trasforma la risposta in un oggetto JS
+    const BRANI = DATI.results.map((raw) => new Track(raw));// da ogni risultato "grezzo" dell'API crea un oggetto Track, in un nuovo array
 
-    brani.sort(() => Math.random() - 0.5);//album radom
-    return brani.slice(0, 6);
+    BRANI.sort(() => Math.random() - 0.5);//album radom
+    return BRANI.slice(0, 4);
 
   } catch (err) {
     console.error(err);
     return []; // renderRow con array vuoto non crea niente
   }
 };
-caricaSuggerimenti("hits pop")
+CARICA_SUGGERIMENTI("hits pop")
 
 /*
   loadHome()
   - lancia in parallelo le 3 ricerche dei suggerimenti
   - costruisce le righe nell'ordine: pop, rock, hits
 */
-const loadHome = async () => {
+const LOAD_HOME = async () => {
   // Le tre ricerche partono insieme
-  const risultati = await Promise.allSettled([
-    caricaSuggerimenti("pop"),
-    caricaSuggerimenti("rock"),
-    caricaSuggerimenti("hits"),
+  const RISULTATI = await Promise.allSettled([
+    CARICA_SUGGERIMENTI("pop"),
+    CARICA_SUGGERIMENTI("rock"),
+    CARICA_SUGGERIMENTI("hits"),
   ]);
-  const [pop, rock, hits] = risultati;
+  const [POP, ROCK, HITS] = RISULTATI;
 
-  if (pop.status === "fulfilled") {
-    renderRow("Suggerimenti pop", pop.value);
+  if (POP.status === "fulfilled") {
+    RENDER_ROW("Suggerimenti pop", POP.value);
   }
 
-  if (rock.status === "fulfilled") {
-    renderRow("Suggerimenti rock", rock.value);
+  if (ROCK.status === "fulfilled") {
+    RENDER_ROW("Suggerimenti rock", ROCK.value);
   }
 
-  if (hits.status === "fulfilled") {
-    renderRow("Suggerimenti hits", hits.value);
+  if (HITS.status === "fulfilled") {
+    RENDER_ROW("Suggerimenti hits", HITS.value);
   }
 };
 
-loadHome();
+LOAD_HOME();

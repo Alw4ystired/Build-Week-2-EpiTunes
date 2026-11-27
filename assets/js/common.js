@@ -66,6 +66,9 @@ const AUDIODB_BASE = "https://www.theaudiodb.com/api/v1/json/123";
 const STORAGE_KEY_HISTORY = "epitunes_history";
 const STORAGE_KEY_FAVOURITES = "epitunes_favourites";
 const STORAGE_KEY_LAST_SEARCH = "epitunes_last_search";
+const STORAGE_KEY_PLAYER = "epitunes_player"; // brano in riproduzione + secondo a cui era arrivato
+const STORAGE_KEY_VOLUME = "epitunes_volume";
+const DEFAULT_VOLUME = 0.5;
 const MAX_HISTORY = 12;
 
 /* ============================ 2. Helpers ============================ */
@@ -79,14 +82,14 @@ Serve a non ripetere ogni volta le stesse righe, e per usare solo createElement 
 */
 
 function creaElemento(tag, classe, genitore, testo, id) {
-  const elemento = document.createElement(tag); // crea il nodo, per ora staccato dalla pagina
+  const ELEMENTO = document.createElement(tag); // crea il nodo, per ora staccato dalla pagina
 
-  if (classe) elemento.className = classe; // salta se non passiamo la classe (undefined o "")
-  if (testo !== undefined) elemento.textContent = testo; // !== undefined perche' lo 0 e la stringa vuota sono testi validi
-  if (id) elemento.id = id; // serve dove il CSS o il JS cercano l'elemento per id
-  if (genitore) genitore.appendChild(elemento); // solo qui l'elemento entra davvero nella pagina
+  if (classe) ELEMENTO.className = classe; // salta se non passiamo la classe (undefined o "")
+  if (testo !== undefined) ELEMENTO.textContent = testo; // !== undefined perche' lo 0 e la stringa vuota sono testi validi
+  if (id) ELEMENTO.id = id; // serve dove il CSS o il JS cercano l'elemento per id
+  if (genitore) genitore.appendChild(ELEMENTO); // solo qui l'elemento entra davvero nella pagina
 
-  return elemento; // lo restituiamo per poterlo riusare dopo
+  return ELEMENTO; // lo restituiamo per poterlo riusare dopo
 }
 
 /*
@@ -96,15 +99,15 @@ function creaElemento(tag, classe, genitore, testo, id) {
   - In caso di errore ritorna { results: [], resultCount: 0 } per semplificare i chiamanti
 */
 
-const fetchJSON = async (url) => {
+const FETCH_JSON = async (url) => {
   try {
-    const risposta = await fetch(url);
+    const RISPOSTA = await fetch(url);
     // fetch NON lancia errore sugli stati HTTP: un 404 o un 500 arrivano qui
     // come risposte normali. Siamo noi a doverli trasformare in errori.
-    if (!risposta.ok) {
-      throw new Error(`Richiesta fallita: ${risposta.status} ${risposta.statusText}`);
+    if (!RISPOSTA.ok) {
+      throw new Error(`Richiesta fallita: ${RISPOSTA.status} ${RISPOSTA.statusText}`);
     }
-    return await risposta.json();
+    return await RISPOSTA.json();
   } catch (errore) {
     // Finisce qui sia l'errore lanciato sopra, sia quelli di rete
     // (host irraggiungibile, connessione assente, JSON malformato).
@@ -131,28 +134,28 @@ const fetchJSON = async (url) => {
     due richieste quasi contemporanee dello stesso artista ne fanno partire una.
   - toLowerCase(): "Linkin Park" e "LINKIN PARK" sono lo stesso artista.
 */
-const infoArtistiCache = new Map();
+const INFO_ARTISTI_CACHE = new Map();
 
-const cercaInfoArtista = (nome) => {
+const CERCA_INFO_ARTISTA = (nome) => {
   if (!nome) return Promise.resolve(null); // nessun nome: rispondo subito "niente"
 
-  const chiave = nome.toLowerCase();
+  const CHIAVE = nome.toLowerCase();
 
-  if (!infoArtistiCache.has(chiave)) {
-    const richiesta = fetchJSON(`${AUDIODB_BASE}/search.php?s=${encodeURIComponent(nome)}`)
+  if (!INFO_ARTISTI_CACHE.has(CHIAVE)) {
+    const RICHIESTA = FETCH_JSON(`${AUDIODB_BASE}/search.php?s=${encodeURIComponent(nome)}`)
       .then((dati) => {
-        const trovato = dati.artists?.[0]; // ?. perche' "artists" puo' essere null
-        if (!trovato) return null; // artista non presente su TheAudioDB
+        const TROVATO = dati.artists?.[0]; // ?. perche' "artists" puo' essere null
+        if (!TROVATO) return null; // artista non presente su TheAudioDB
 
         return {
-          foto: trovato.strArtistThumb || null,
-          follower: Number(trovato.intFollowers) || null,
+          foto: TROVATO.strArtistThumb || null,
+          follower: Number(TROVATO.intFollowers) || null,
         };
       });
-    infoArtistiCache.set(chiave, richiesta);
+    INFO_ARTISTI_CACHE.set(CHIAVE, RICHIESTA);
   }
 
-  return infoArtistiCache.get(chiave);
+  return INFO_ARTISTI_CACHE.get(CHIAVE);
 };
 
 /*
@@ -160,7 +163,7 @@ const cercaInfoArtista = (nome) => {
   - L'API iTunes ritorna artwork 100x100 (artworkUrl100)
   - Sostituisce "100x100bb" con "600x600bb" per avere una cover più grande
 */
-const bigArt = (url) => {
+const BIG_ART = (url) => {
   if (!url) return "";
   return url.replace("100x100", "600x600");
 };
@@ -170,12 +173,12 @@ const bigArt = (url) => {
   - Converte millisecondi in stringa "m:ss"
   - Esempio: 65000 -> "1:05"
 */
-const formatTime = (ms) => {
+const FORMAT_TIME = (ms) => {
   if (!ms) return "0:00";
-  const totalSec = Math.floor(ms / 1000);
-  const min = Math.floor(totalSec / 60);
-  const sec = totalSec % 60;
-  return `${min}:${String(sec).padStart(2, "0")}`;
+  const TOTAL_SEC = Math.floor(ms / 1000);
+  const MIN = Math.floor(TOTAL_SEC / 60);
+  const SEC = TOTAL_SEC % 60;
+  return `${MIN}:${String(SEC).padStart(2, "0")}`;
 };
 
 /*
@@ -183,7 +186,7 @@ const formatTime = (ms) => {
   - Restituisce una nuova funzione che chiama fn solo dopo "ms" millisecondi
     di pausa rispetto all'ultima chiamata. Usata per la ricerca al type.
 */
-const debounce = (fn, ms) => {
+const DEBOUNCE = (fn, ms) => {
   let timerId = null;
   return (...args) => {
     clearTimeout(timerId);
@@ -274,20 +277,41 @@ class Player {
     this.audio = document.querySelector("#audio-element");
     this.currentTrack = null;
     this.isPlaying = false;
+    this.inAttesa = false; // true = deve ripartire al primo click (vedi ripristina)
     this.el = {}; // lo riempie mount(), quando il footer esiste davvero
+
+    // La coda: l'elenco in cui si muovono "precedente" e "successivo".
+    // La riempie play(track, lista); senza lista contiene il solo brano corrente.
+    this.coda = [];
+    this.mischia = false; // ⇄ il successivo e' a caso invece che in ordine
+    this.ripeti = false;  // ↻ a fine brano ricomincia lo stesso
 
     this.audio.addEventListener("timeupdate", () => {
       if (!this.el.tempoCorrente || !this.audio.duration) return;
-      this.el.tempoCorrente.textContent = formatTime(this.audio.currentTime * 1000);
+      this.el.tempoCorrente.textContent = FORMAT_TIME(this.audio.currentTime * 1000);
       this.el.progressFill.style.width = `${(this.audio.currentTime / this.audio.duration) * 100}%`;
     });
 
     this.audio.addEventListener("ended", () => {
+      // ↻ acceso: lo stesso brano da capo
+      if (this.ripeti && this.currentTrack) {
+        this.audio.currentTime = 0;
+        this.audio.play().catch(() => {});
+        return;
+      }
+
+      // C'e' una coda vera: passo al prossimo invece di fermarmi
+      if (this.coda.length > 1) {
+        this.successivo();
+        return;
+      }
+
       this.isPlaying = false;
       if (this.el.toggle) this.el.toggle.textContent = "▶";
+      AGGIORNA_SIDEBAR_PLAY();
     });
 
-    // ⭐ MODIFICA 1 — NUOVO: se il file audio non si carica (indirizzo sbagliato,
+    // Se il file audio non si carica (indirizzo sbagliato,
     // formato non supportato...) il browser lancia l'evento "error":
     // ora lo scriviamo in console invece di ignorarlo, e rimettiamo l'icona ▶
     this.audio.addEventListener("error", () => {
@@ -295,63 +319,168 @@ class Player {
       this.isPlaying = false;
       if (this.el.toggle) this.el.toggle.textContent = "▶";
     });
-    // ⭐ FINE MODIFICA 1
+
+    // Quando la pagina sta per chiudersi (anche cliccando un link, es. il brano
+    // in basso a sinistra) salvo brano + secondo + play/pausa: la pagina dopo riparte da li'
+    window.addEventListener("pagehide", () => this.salvaStato());
+
+    // Ogni volta che l'audio parte o si ferma (da qualunque pulsante) aggiorno
+    // le icone ▶/⏸ della sidebar e delle card
+    this.audio.addEventListener("play", () => AGGIORNA_SIDEBAR_PLAY());
+    this.audio.addEventListener("pause", () => AGGIORNA_SIDEBAR_PLAY());
+  }
+
+  /*
+    salvaStato()
+    - Scrive in localStorage il brano corrente, il secondo a cui e' arrivato
+      e se stava suonando. localStorage salva solo stringhe: JSON.stringify.
+  */
+  salvaStato() {
+    if (!this.currentTrack) return; // niente brano: non sovrascrivo il salvataggio vecchio
+
+    const STATO = {
+      track: this.currentTrack,
+      time: this.audio.currentTime,
+      playing: this.isPlaying || this.inAttesa, // inAttesa = doveva suonare ma il browser ha bloccato
+      coda: this.coda,       // cosi' precedente/successivo funzionano anche dopo aver cambiato pagina
+      mischia: this.mischia,
+      ripeti: this.ripeti,
+    };
+    localStorage.setItem(STORAGE_KEY_PLAYER, JSON.stringify(STATO));
+  }
+
+  /*
+    ripristina()
+    - Chiamata alla fine di mount(): rilegge il salvataggio e rimette il player
+      com'era (titolo, cover, tempo). Se stava suonando prova a ripartire.
+    - Il browser puo' bloccare la ripartenza automatica: in quel caso resta in
+      pausa (icona ▶) e basta un click su play.
+  */
+  ripristina() {
+    let STATO = null;
+    try {
+      STATO = JSON.parse(localStorage.getItem(STORAGE_KEY_PLAYER));
+    } catch (errore) {
+      return; // dati rovinati: ignoro
+    }
+    if (!STATO || !STATO.track || !STATO.track.previewUrl) return; // niente salvato
+
+    this.currentTrack = STATO.track;
+    this.coda = Array.isArray(STATO.coda) && STATO.coda.length ? STATO.coda : [STATO.track];
+    this.mischia = !!STATO.mischia;
+    this.ripeti = !!STATO.ripeti;
+    this.aggiornaInterruttori();
+    this.audio.src = STATO.track.previewUrl;
+
+    this.el.cover.src = STATO.track.cover;
+    this.el.cover.alt = STATO.track.title;
+    this.el.titolo.textContent = STATO.track.title;
+    this.el.artista.textContent = STATO.track.artist;
+    this.el.tempoTotale.textContent = FORMAT_TIME(STATO.track.durationMs);
+
+    // Il secondo si puo' impostare solo quando il browser conosce la durata
+    this.audio.addEventListener(
+      "loadedmetadata",
+      () => {
+        this.audio.currentTime = STATO.time;
+      },
+      { once: true }
+    );
+
+    if (STATO.playing) {
+      this.audio
+        .play()
+        .then(() => {
+          this.isPlaying = true;
+          this.el.toggle.textContent = "⏸";
+          AGGIORNA_SIDEBAR_PLAY();
+        })
+        .catch(() => {
+          // Il browser blocca l'audio che parte da solo (serve un click dell'utente).
+          // Allora resto in pausa e riparto al PRIMO click ovunque nella pagina.
+          this.isPlaying = false;
+          this.inAttesa = true;
+
+          document.addEventListener(
+            "click",
+            () => {
+              // inAttesa e' tornato false se l'utente ha gia' usato un pulsante play: non faccio niente
+              if (this.inAttesa && this.audio.paused) {
+                this.isPlaying = true;
+                this.audio.play().catch(() => {});
+                this.el.toggle.textContent = "⏸";
+                AGGIORNA_SIDEBAR_PLAY();
+              }
+              this.inAttesa = false;
+            },
+            { once: true }
+          );
+        });
+    }
   }
 
   mount() {
-    const footer = document.querySelector(".player");
-    if (!footer) return;
+    const FOOTER = document.querySelector(".player");
+    if (!FOOTER) return;
 
-    footer.replaceChildren(); // svuota, come faceva innerHTML
+    FOOTER.replaceChildren(); // svuota, come faceva innerHTML
 
     /* ---------- SINISTRA: cover + titolo/artista ---------- */
-    const playerTrack = creaElemento("div", "player-track d-flex align-items-center", footer);
+    const PLAYER_TRACK = creaElemento("div", "player-track d-flex align-items-center gap-3", FOOTER);
 
-    const playerCover = creaElemento("div", "player-cover rounded-1 overflow-hidden flex-shrink-0 bg-black", playerTrack);
-    const coverImg = creaElemento("img", "w-100 h-100 object-fit-cover d-block", playerCover, undefined, "player-cover-img");
-    coverImg.alt = "";
+    // Click sul brano in riproduzione -> apre la pagina del brano (track.html)
+    PLAYER_TRACK.setAttribute("role", "button"); // Bootstrap mostra la manina sugli elementi con role="button"
+    PLAYER_TRACK.addEventListener("click", () => {
+      if (this.currentTrack) {
+        window.location.href = `track.html?id=${this.currentTrack.id}`;
+      }
+    });
 
-    const playerMeta = creaElemento("div", "player-meta", playerTrack);
-    creaElemento("p", "player-title fw-semibold text-truncate m-0", playerMeta, "Seleziona un brano", "player-title");
-    creaElemento("p", "player-artist text-body-secondary text-truncate m-0", playerMeta, "—", "player-artist");
+    const PLAYER_COVER = creaElemento("div", "player-cover rounded-1 overflow-hidden flex-shrink-0 bg-black", PLAYER_TRACK);
+    const COVER_IMG = creaElemento("img", "w-100 h-100 object-fit-cover d-block", PLAYER_COVER, undefined, "player-cover-img");
+    COVER_IMG.alt = "";
+
+    const PLAYER_META = creaElemento("div", "player-meta", PLAYER_TRACK);
+    creaElemento("p", "player-title fw-semibold text-truncate m-0", PLAYER_META, "Seleziona un brano", "player-title");
+    creaElemento("p", "player-artist text-body-secondary text-truncate m-0", PLAYER_META, "—", "player-artist");
 
     /* ---------- CENTRO: controlli + barra di avanzamento ---------- */
-    const playerCenter = creaElemento("div", "player-center d-flex flex-column align-items-center gap-2", footer);
+    const PLAYER_CENTER = creaElemento("div", "player-center d-flex flex-column align-items-center gap-2", FOOTER);
 
-    const controls = creaElemento("div", "player-controls d-flex align-items-center gap-3", playerCenter);
-    const bottoni = [
+    const CONTROLS = creaElemento("div", "player-controls d-flex align-items-center gap-3", PLAYER_CENTER);
+    const BOTTONI = [
       { id: "btn-shuffle", cls: "btn-ctrl border-0 bg-transparent", label: "Shuffle", text: "⇄" },
       { id: "btn-prev", cls: "btn-ctrl border-0 bg-transparent", label: "Precedente", text: "⏮" },
-      { id: "btn-toggle", cls: "btn-play rounded-circle border-0 bg-white text-black", label: "Play/Pausa", text: "▶" },
+      { id: "btn-toggle", cls: "btn-play rounded-circle border-0 bg-white text-black fs-6", label: "Play/Pausa", text: "▶" },
       { id: "btn-next", cls: "btn-ctrl border-0 bg-transparent", label: "Successivo", text: "⏭" },
       { id: "btn-repeat", cls: "btn-ctrl border-0 bg-transparent", label: "Ripeti", text: "↻" },
     ];
-    bottoni.forEach(({ id, cls, label, text }) => {
-      const btn = creaElemento("button", cls, controls, text, id);
-      btn.setAttribute("aria-label", label);
+    BOTTONI.forEach(({ id, cls, label, text }) => {
+      const BTN = creaElemento("button", cls, CONTROLS, text, id);
+      BTN.setAttribute("aria-label", label);
     });
 
-    const progress = creaElemento("div", "player-progress d-flex align-items-center gap-2 w-100", playerCenter);
-    creaElemento("span", undefined, progress, "0:00", "time-current");
-    const progressBar = creaElemento("div", "progress-bar flex-grow-1", progress, undefined, "progress-bar");
-    creaElemento("div", "progress-fill h-100", progressBar, undefined, "progress-fill");
-    creaElemento("span", undefined, progress, "0:00", "time-total");
+    const PROGRESS = creaElemento("div", "player-progress d-flex align-items-center gap-2 w-100", PLAYER_CENTER);
+    creaElemento("span", undefined, PROGRESS, "0:00", "time-current");
+    const PROGRESS_BAR = creaElemento("div", "progress-bar flex-grow-1", PROGRESS, undefined, "progress-bar");
+    creaElemento("div", "progress-fill h-100", PROGRESS_BAR, undefined, "progress-fill");
+    creaElemento("span", undefined, PROGRESS, "0:00", "time-total");
 
     let staTrascinando = false;
 
-    const spostaProgress = (evento) => {
-      const box = progressBar.getBoundingClientRect();
-      this.seek((evento.clientX - box.left) / box.width);
+    const SPOSTA_PROGRESS = (evento) => {
+      const BOX = PROGRESS_BAR.getBoundingClientRect();
+      this.seek((evento.clientX - BOX.left) / BOX.width);
     };
 
-    progressBar.addEventListener("mousedown", (evento) => {
+    PROGRESS_BAR.addEventListener("mousedown", (evento) => {
       staTrascinando = true;
-      spostaProgress(evento);
+      SPOSTA_PROGRESS(evento);
     });
 
     document.addEventListener("mousemove", (evento) => {
       if (staTrascinando) {
-        spostaProgress(evento);
+        SPOSTA_PROGRESS(evento);
       }
     });
 
@@ -360,38 +489,47 @@ class Player {
     });
 
     /* ---------- DESTRA: volume ---------- */
-    const playerRight = creaElemento("div", "player-right align-items-center justify-content-end", footer);
-    creaElemento("span", undefined, playerRight, "🔊");
-    const volumeBar = creaElemento("div", "volume-bar", playerRight, undefined, "volume-bar");
-    creaElemento("div", "volume-fill h-100", volumeBar, undefined, "volume-fill");
-    
+    const PLAYER_RIGHT = creaElemento("div", "player-right d-none d-sm-flex align-items-center justify-content-end gap-2", FOOTER);
+    creaElemento("span", undefined, PLAYER_RIGHT, "🔊");
+    const VOLUME_BAR = creaElemento("div", "volume-bar", PLAYER_RIGHT, undefined, "volume-bar");
+    creaElemento("div", "volume-fill h-100", VOLUME_BAR, undefined, "volume-fill");
+
     let staTrascinandoVolume = false;
 
-    const spostaVolume = (evento) => {
-      const box = volumeBar.getBoundingClientRect();
-      this.setVolume((evento.clientX - box.left) / box.width);
+    const SPOSTA_VOLUME = (evento) => {
+      evento.preventDefault();
+      const BOX = VOLUME_BAR.getBoundingClientRect();
+      this.setVolume((evento.clientX - BOX.left) / BOX.width);
     };
 
-    volumeBar.addEventListener("mousedown", (evento) => {
+    VOLUME_BAR.addEventListener("mousedown", (evento) => {
+      evento.preventDefault();
       staTrascinandoVolume = true;
-      spostaVolume(evento);
+      SPOSTA_VOLUME(evento);
     });
 
     document.addEventListener("mousemove", (evento) => {
+      evento.preventDefault();
       if (staTrascinandoVolume) {
-        spostaVolume(evento);
+        SPOSTA_VOLUME(evento);
       }
     });
 
     document.addEventListener("mouseup", () => {
       staTrascinandoVolume = false;
     });
+
     /* ---------- riferimenti agli elementi, ora che esistono ---------- */
+
     this.el = {
       cover: document.querySelector("#player-cover-img"),
       titolo: document.querySelector("#player-title"),
       artista: document.querySelector("#player-artist"),
       toggle: document.querySelector("#btn-toggle"),
+      mischia: document.querySelector("#btn-shuffle"),
+      precedente: document.querySelector("#btn-prev"),
+      successivo: document.querySelector("#btn-next"),
+      ripeti: document.querySelector("#btn-repeat"),
       tempoCorrente: document.querySelector("#time-current"),
       tempoTotale: document.querySelector("#time-total"),
       progressFill: document.querySelector("#progress-fill"),
@@ -399,11 +537,44 @@ class Player {
     };
 
     this.el.toggle.addEventListener("click", () => this.togglePlay());
-    this.setVolume(0.8);
+
+    this.el.precedente?.addEventListener("click", () => this.precedente());
+    this.el.successivo?.addEventListener("click", () => this.successivo());
+
+    this.el.mischia?.addEventListener("click", () => {
+      this.mischia = !this.mischia;
+      this.aggiornaInterruttori();
+    });
+
+    this.el.ripeti?.addEventListener("click", () => {
+      this.ripeti = !this.ripeti;
+      this.aggiornaInterruttori();
+    });
+
+    this.aggiornaInterruttori();
+    this.setVolume(GET_VOLUME());
+    this.ripristina(); // se c'era un brano in riproduzione nella pagina prima, lo rimetto
   }
 
-  play(track) {
+  play(track, lista) {
     if (!track || !track.previewUrl) return;
+
+    // Se chi chiama passa la lista, quella diventa la coda. Se non la passa e
+    // il brano non e' gia' in coda, la coda e' il brano da solo.
+    if (Array.isArray(lista) && lista.length) {
+      this.coda = lista.filter((t) => t && t.previewUrl);
+    } else if (!this.coda.some((t) => t.id === track.id)) {
+      this.coda = [track];
+    }
+
+    this.inAttesa = false; // l'utente ha scelto lui cosa suonare
+
+    // Stesso brano gia' caricato: non lo faccio ripartire da capo,
+    // faccio play/pausa (cosi' il secondo click su un brano lo mette in pausa)
+    if (this.currentTrack && this.currentTrack.id === track.id) {
+      this.togglePlay();
+      return;
+    }
 
     this.currentTrack = track;
     this.isPlaying = true;
@@ -416,23 +587,95 @@ class Player {
     });
 
 
-    addToHistory(track);
+    ADD_TO_HISTORY(track);
 
     if (this.el.titolo) {
       this.el.cover.src = track.cover;
       this.el.cover.alt = track.title;
       this.el.titolo.textContent = track.title;
       this.el.artista.textContent = track.artist;
-      this.el.tempoTotale.textContent = formatTime(track.durationMs);
+      this.el.tempoTotale.textContent = FORMAT_TIME(track.durationMs);
       this.el.toggle.textContent = "⏸";
     }
 
     document.querySelector(".track-row.is-playing")?.classList.remove("is-playing");
     document.querySelector(`.track-row[data-track-id="${track.id}"]`)?.classList.add("is-playing");
+    AGGIORNA_SIDEBAR_PLAY();
+
+    // Avviso le pagine che il brano e' cambiato (es. track.js aggiorna hero e testo)
+    window.dispatchEvent(new CustomEvent("cambio-brano", { detail: track }));
+  }
+
+  /*
+    indiceInCoda()
+    - Dove sta il brano corrente dentro la coda. -1 se non c'e'.
+  */
+  indiceInCoda() {
+    if (!this.currentTrack) return -1;
+    return this.coda.findIndex((t) => t.id === this.currentTrack.id);
+  }
+
+  /*
+    precedente()
+    - Come su Spotify: se sono passati piu' di 3 secondi riporta il brano
+      all'inizio, altrimenti va a quello prima. In fondo alla coda si ricomincia.
+  */
+  precedente() {
+    if (!this.currentTrack) return;
+
+    if (this.audio.currentTime > 3) {
+      this.audio.currentTime = 0;
+      return;
+    }
+
+    const I = this.indiceInCoda();
+    if (I < 0 || this.coda.length < 2) {
+      this.audio.currentTime = 0;
+      return;
+    }
+    this.play(this.coda[(I - 1 + this.coda.length) % this.coda.length]);
+  }
+
+  /*
+    successivo()
+    - Con ⇄ spento va al brano dopo (dall'ultimo torna al primo).
+    - Con ⇄ acceso ne pesca uno a caso, mai quello che sta gia' suonando.
+  */
+  successivo() {
+    if (this.coda.length < 2) return;
+
+    const I = this.indiceInCoda();
+
+    if (this.mischia) {
+      let scelto = I;
+      while (scelto === I) scelto = Math.floor(Math.random() * this.coda.length);
+      this.play(this.coda[scelto]);
+      return;
+    }
+
+    this.play(this.coda[(I + 1) % this.coda.length]);
+  }
+
+  /*
+    aggiornaInterruttori()
+    - Accende o spegne di verde i bottoni ⇄ e ↻ (classe is-on in app.css)
+      e aggiorna aria-pressed per chi usa uno screen reader.
+  */
+  aggiornaInterruttori() {
+    if (this.el.mischia) {
+      this.el.mischia.classList.toggle("is-on", this.mischia);
+      this.el.mischia.setAttribute("aria-pressed", String(this.mischia));
+    }
+    if (this.el.ripeti) {
+      this.el.ripeti.classList.toggle("is-on", this.ripeti);
+      this.el.ripeti.setAttribute("aria-pressed", String(this.ripeti));
+    }
   }
 
   togglePlay() {
     if (!this.currentTrack) return;
+
+    this.inAttesa = false; // l'utente ha premuto play/pausa lui
 
     if (this.audio.paused) {
       this.audio.play().catch((errore) => {
@@ -447,22 +690,28 @@ class Player {
     }
 
     if (this.el.toggle) this.el.toggle.textContent = this.isPlaying ? "⏸" : "▶";
+    AGGIORNA_SIDEBAR_PLAY();
   }
 
   setVolume(v) {
-    const volume = Math.min(1, Math.max(0, v));
-    this.audio.volume = volume;
+    const VOLUME = Math.min(1, Math.max(0, v));
+    this.audio.volume = VOLUME;
 
-    if (this.el.volumeFill) this.el.volumeFill.style.width = `${volume * 100}%`;
+    // Trascinando la barra questo metodo viene chiamato a ogni movimento del
+    // mouse: SALVA_VOLUME aspetta che la mano si fermi, cosi' si scrive su
+    // localStorage una volta sola invece di decine.
+    SALVA_VOLUME(VOLUME);
+
+    if (this.el.volumeFill) this.el.volumeFill.style.width = `${VOLUME * 100}%`;
   }
 
   seek(percent) {
     if (!this.audio.duration) return;
 
-    const frazione = Math.min(1, Math.max(0, percent));
-    this.audio.currentTime = this.audio.duration * frazione;
+    const FRAZIONE = Math.min(1, Math.max(0, percent));
+    this.audio.currentTime = this.audio.duration * FRAZIONE;
 
-    if (this.el.progressFill) this.el.progressFill.style.width = `${frazione * 100}%`;
+    if (this.el.progressFill) this.el.progressFill.style.width = `${FRAZIONE * 100}%`;
   }
 }
 
@@ -484,13 +733,13 @@ class Player {
   - Ritorna sempre un array: cosi' i chiamanti possono fare .filter / .map
     senza controllare niente.
 */
-const readArray = (chiave) => {
+const READ_ARRAY = (chiave) => {
   try {
-    const salvato = localStorage.getItem(chiave);
-    if (!salvato) return [];                      // chiave mai scritta
+    const SALVATO = localStorage.getItem(chiave);
+    if (!SALVATO) return [];                      // chiave mai scritta
 
-    const dati = JSON.parse(salvato);
-    return Array.isArray(dati) ? dati : [];       // se non e' un array, lo scartiamo
+    const DATI = JSON.parse(SALVATO);
+    return Array.isArray(DATI) ? DATI : [];       // se non e' un array, lo scartiamo
   } catch (errore) {
     console.error("readArray: dati non validi in", chiave, errore.message);
     return [];
@@ -501,11 +750,26 @@ const readArray = (chiave) => {
   writeArray(chiave, array)
   - localStorage salva solo stringhe, quindi va sempre passato da JSON.stringify.
 */
-const writeArray = (chiave, array) => {
+const WRITE_ARRAY = (chiave, array) => {
   localStorage.setItem(chiave, JSON.stringify(array));
 };
 
-const getHistory = () => readArray(STORAGE_KEY_HISTORY);
+const GET_VOLUME = () => {
+  const SALVATO = localStorage.getItem(STORAGE_KEY_VOLUME);
+  if (SALVATO === null) return DEFAULT_VOLUME; // Number(null) darebbe 0 (muto)
+
+  const VOLUME = Number(SALVATO);
+  return Number.isNaN(VOLUME) ? DEFAULT_VOLUME : VOLUME;
+};
+
+/*
+  SALVA_VOLUME(v)
+  - Scrive il volume in localStorage, ma solo 300ms dopo l'ultima chiamata.
+  - Riusa DEBOUNCE (sezione 2), lo stesso che rimanda la ricerca mentre si digita.
+*/
+const SALVA_VOLUME = DEBOUNCE((v) => localStorage.setItem(STORAGE_KEY_VOLUME, String(v)), 300);
+
+const GET_HISTORY = () => READ_ARRAY(STORAGE_KEY_HISTORY);
 
 /*
   addToHistory(track)
@@ -514,66 +778,96 @@ const getHistory = () => readArray(STORAGE_KEY_HISTORY);
   - Taglia a MAX_HISTORY (12) elementi.
   - Viene chiamata da player.play().
 */
-const addToHistory = (track) => {
-  const senzaDuplicato = getHistory().filter((t) => t.id !== track.id);
-  writeArray(STORAGE_KEY_HISTORY, [track, ...senzaDuplicato].slice(0, MAX_HISTORY));
+const ADD_TO_HISTORY = (track) => {
+  const SENZA_DUPLICATO = GET_HISTORY().filter((t) => t.id !== track.id);
+  WRITE_ARRAY(STORAGE_KEY_HISTORY, [track, ...SENZA_DUPLICATO].slice(0, MAX_HISTORY));
 };
 
-const getFavourites = () => readArray(STORAGE_KEY_FAVOURITES);
+const GET_FAVOURITES = () => READ_ARRAY(STORAGE_KEY_FAVOURITES);
 
-const isFavourite = (trackId) => getFavourites().some((t) => t.id === trackId);
+const IS_FAVOURITE = (trackId) => GET_FAVOURITES().some((t) => t.id === trackId);
 
 /*
   toggleFavourite(track)
   - Se il brano c'e' lo toglie, se non c'e' lo aggiunge in testa.
 */
-const toggleFavourite = (track) => {
-  const preferiti = getFavourites();
-  const giaPresente = preferiti.find((t) => t.id === track.id);
+const TOGGLE_FAVOURITE = (track) => {
+  const PREFERITI = GET_FAVOURITES();
+  const GIA_PRESENTE = PREFERITI.find((t) => t.id === track.id);
 
-  writeArray(
+  WRITE_ARRAY(
     STORAGE_KEY_FAVOURITES,
-    giaPresente ? preferiti.filter((t) => t.id !== track.id) : [track, ...preferiti]
+    GIA_PRESENTE ? PREFERITI.filter((t) => t.id !== track.id) : [track, ...PREFERITI]
   );
 };
 
-/* ============================ 6. Render sidebar ============================ */
+/* ============================ 6. Render sidebar e bottoni ============================ */
+
+/*
+  LINKS_NAV
+  - Le pagine principali: le usano sia la sidebar (da 576px in su)
+    sia i bottoncini nella topbar (sotto i 576px).
+*/
+const LINKS_NAV = [
+  { href: "index.html", page: "home", ico: "🏠", text: "Home" },
+  { href: "search.html", page: "search", ico: "🔍", text: "Cerca" },
+];
 
 /*
   renderSidebar(activePage)
   - activePage: "home" | "search" | "library" (per evidenziare il link attivo)
 */
-const renderSidebar = (activePage) => {
-  const sidebar = document.querySelector(".sidebar");
-  if (!sidebar) return;
+const RENDER_SIDEBAR = (activePage) => {
+  const SIDEBAR = document.querySelector(".sidebar");
+  if (!SIDEBAR) return;
 
-  sidebar.replaceChildren();
+  SIDEBAR.replaceChildren();
 
   /* ---------- Logo ---------- */
-  const brand = creaElemento("div", "brand d-flex align-items-center fw-bold", sidebar);
-  creaElemento("div", "brand-mark rounded-2 text-black", brand, "E");
-  creaElemento("span", "brand-text", brand, "EpiTunes");
+  const BRAND = creaElemento("div", "brand d-flex align-items-center gap-2 fw-bold fs-5", SIDEBAR);
+  creaElemento("div", "brand-mark d-flex align-items-center justify-content-center rounded-2 text-black fw-bold", BRAND, "E");
+  creaElemento("span", "brand-text d-none d-lg-inline", BRAND, "EpiTunes");
 
   /* ---------- Navigazione ---------- */
-  const nav = creaElemento("nav", "sidebar-nav d-flex flex-column gap-1 mb-4", sidebar);
-  const links = [
-    { href: "index.html", page: "home", ico: "🏠", text: "Home" },
-    { href: "search.html", page: "search", ico: "🔍", text: "Cerca" },
-  ];
-  links.forEach(({ href, page, ico, text }) => {
-    const classeAttiva = activePage === page ? " active" : "";
-    const a = creaElemento("a", `d-flex align-items-center rounded-2 fw-semibold${classeAttiva}`, nav);
-    a.href = href;
-    a.dataset.page = page; // diventa data-page="..."
-    creaElemento("span", "ico text-center", a, ico);
-    creaElemento("span", undefined, a, text);
+  const NAV = creaElemento("nav", "sidebar-nav d-flex flex-column gap-1 mb-4", SIDEBAR);
+  LINKS_NAV.forEach(({ href, page, ico, text }) => {
+    const CLASSE_ATTIVA = activePage === page ? " active" : "";
+    const A = creaElemento("a", `d-flex align-items-center justify-content-center justify-content-lg-start gap-3 px-0 px-lg-3 py-2 rounded-2 fw-semibold${CLASSE_ATTIVA}`, NAV);
+    A.href = href;
+    A.dataset.page = page; // diventa data-page="..."
+    creaElemento("span", "ico text-center fs-5", A, ico);
+    creaElemento("span", "d-none d-lg-inline", A, text);
   });
 
   /* ---------- Preferiti ---------- */
-  creaElemento("p", "sidebar-section-title text-uppercase text-body-secondary m-0", sidebar, "I tuoi preferiti");
-  creaElemento("ul", "sidebar-list list-unstyled m-0", sidebar, undefined, "sidebar-favs");
+  creaElemento("p", "sidebar-section-title d-none d-lg-block text-uppercase text-body-secondary px-3 pt-3 pb-2 m-0", SIDEBAR, "I tuoi preferiti");
+  creaElemento("ul", "sidebar-list d-none d-lg-flex flex-column gap-1 list-unstyled m-0 px-1", SIDEBAR, undefined, "sidebar-favs");
 
-  renderSidebarFavs();
+  RENDER_SIDEBAR_FAVS();
+};
+
+/*
+  renderNavMobile()
+  - Sotto i 576px la sidebar sparisce: Home e Cerca diventano due
+    bottoncini tondi nella topbar, accanto alle frecce ‹ ›.
+  - d-sm-none (Bootstrap) = nascosti da 576px in su, dove c'e' la sidebar.
+  - Stesse classi delle frecce (nav-btn rounded-circle...): stessa grandezza e stile.
+  - d-flex + align/justify-content-center centrano l'icona dentro il cerchio.
+*/
+const RENDER_NAV_MOBILE = () => {
+  const TOPBAR_NAV = document.querySelector(".topbar-nav");
+  if (!TOPBAR_NAV) return;
+
+  LINKS_NAV.forEach(({ href, ico, text }) => {
+    const A = creaElemento(
+      "a",
+      "nav-btn rounded-circle border-0 lh-1 d-flex d-sm-none align-items-center justify-content-center",
+      TOPBAR_NAV,
+      ico
+    );
+    A.href = href;
+    A.setAttribute("aria-label", text);
+  });
 };
 
 /*
@@ -582,36 +876,150 @@ const renderSidebar = (activePage) => {
   - Sta in una funzione a parte perche' va richiamata anche dopo ogni
     toggleFavourite, mentre renderSidebar gira una volta sola all'avvio.
 */
-const renderSidebarFavs = () => {
-  const lista = document.querySelector("#sidebar-favs");
-  if (!lista) return;
+const RENDER_SIDEBAR_FAVS = () => {
+  const LISTA = document.querySelector("#sidebar-favs");
+  if (!LISTA) return;
 
-  const preferiti = getFavourites();
-  lista.replaceChildren();
+  const PREFERITI = GET_FAVOURITES();
+  LISTA.replaceChildren();
 
-  if (preferiti.length === 0) {
-    creaElemento("li", "text-truncate rounded-1", lista, "Nessun preferito");
+  if (PREFERITI.length === 0) {
+    creaElemento("li", "text-truncate rounded-1 px-2 py-2", LISTA, "Nessun preferito");
     return;
   }
 
-  preferiti.forEach((track) => {
-    creaElemento("li", "text-truncate rounded-1", lista, track.title);
+  PREFERITI.forEach((track) => {
+    const RIGA = creaElemento("li", "text-truncate rounded-1 px-2 py-2", LISTA, track.title);
+    RIGA.dataset.trackId = String(track.id);
+
+    const BOTTONE = creaElemento("button", "sidebar-play position-absolute rounded-circle border-0 text-black d-flex align-items-center justify-content-center", RIGA, "▶");
+    BOTTONE.type = "button";
+    BOTTONE.setAttribute("aria-label", `Riproduci o metti in pausa ${track.title}`);
+
+    BOTTONE.addEventListener("click", () => {
+      const PLAYER = window.player;
+      if (PLAYER.currentTrack && PLAYER.currentTrack.id === track.id) {
+        PLAYER.togglePlay();
+      } else {
+        PLAYER.play(track, PREFERITI); // la coda diventa l'elenco dei preferiti
+      }
+    });
   });
+
+  AGGIORNA_SIDEBAR_PLAY();
+};
+
+/*
+  AGGIORNA_CARD_PLAY()
+  - Mette ⏸ sul pulsante verde della card del brano che sta suonando,
+    ▶ su tutte le altre (e anche su quella in pausa).
+  - Va richiamata anche dopo aver disegnato nuove card (home e ricerca).
+*/
+const AGGIORNA_CARD_PLAY = () => {
+  const PLAYER = window.player;
+
+  document.querySelectorAll(".card-play").forEach((bottone) => {
+    const CARD = bottone.closest(".card");
+
+    let inRiproduzione = false;
+    if (PLAYER && PLAYER.currentTrack && PLAYER.isPlaying && CARD && CARD.dataset.trackId === String(PLAYER.currentTrack.id)) {
+      inRiproduzione = true;
+    }
+
+    if (inRiproduzione) {
+      bottone.textContent = "⏸";
+    } else {
+      bottone.textContent = "▶";
+    }
+  });
+};
+
+const AGGIORNA_SIDEBAR_PLAY = () => {
+  AGGIORNA_CARD_PLAY(); // stesso momento: aggiorno anche le card
+
+  const PLAYER = window.player;
+  const RIGHE = document.querySelectorAll("#sidebar-favs li");
+
+  RIGHE.forEach((riga) => {
+    const BOTTONE = riga.querySelector(".sidebar-play");
+    if (!BOTTONE) return; // la riga "Nessun preferito" non ha il bottone
+
+    let inRiproduzione = false;
+    if (PLAYER && PLAYER.currentTrack && String(PLAYER.currentTrack.id) === riga.dataset.trackId) {
+      inRiproduzione = true;
+    }
+
+    riga.classList.toggle("is-playing", inRiproduzione);
+
+    if (inRiproduzione && PLAYER.isPlaying) {
+      BOTTONE.textContent = "⏸";
+    } else {
+      BOTTONE.textContent = "▶";
+    }
+  });
+};
+
+/*
+  attivaFrecce()
+  - Collega le frecce ‹ › della topbar (#btn-indietro, #btn-avanti)
+    alla cronologia del browser, come le frecce del browser stesso:
+      indietro -> history.back()    (torna alla pagina precedente)
+      avanti   -> history.forward() (annulla l'ultimo "indietro")
+  - Se il browser supporta la Navigation API (window.navigation), DISATTIVA
+    le frecce che non hanno niente da fare:
+      canGoBack    = c'e' una pagina precedente?
+      canGoForward = sono tornato indietro almeno una volta? (c'e' un "avanti"?)
+  - Se la Navigation API non c'e', le frecce restano sempre attive:
+    funzionano comunque, history.forward() senza "avanti" non fa nulla.
+*/
+const attivaFrecce = () => {
+  const indietro = document.querySelector("#btn-indietro");
+  const avanti = document.querySelector("#btn-avanti");
+  if (!indietro || !avanti) return; // pagina senza frecce: non faccio niente
+
+  // Il comportamento: deleghiamo tutto alla cronologia del browser
+  indietro.addEventListener("click", () => history.back());
+  avanti.addEventListener("click", () => history.forward());
+
+  // Feature detection: se il browser non ha la Navigation API mi fermo qui
+  const navigazione = window.navigation;
+  if (!navigazione) return;
+
+  // Aggiorna lo stato dei bottoni (attivo / disattivato)
+  const aggiornaStato = () => {
+    indietro.disabled = !navigazione.canGoBack;
+    avanti.disabled = !navigazione.canGoForward;
+    // opacity-50 (Bootstrap): freccia semi-trasparente quando e' disattivata
+    indietro.classList.toggle("opacity-50", indietro.disabled);
+    avanti.classList.toggle("opacity-50", avanti.disabled);
+  };
+
+  aggiornaStato(); // stato iniziale, appena la pagina si carica
+
+  // "pageshow" scatta anche quando il browser, tornando indietro, ripristina
+  // la pagina dalla sua memoria (bfcache) SENZA rieseguire il JavaScript:
+  // senza questo, la freccia "avanti" resterebbe disattivata anche quando
+  // in realta' c'e' una pagina in avanti.
+  window.addEventListener("pageshow", aggiornaStato);
 };
 
 /* ============================ 7. Inizializzazione ============================ */
 
 /*
-  initPage(activePage)
+  INIT_PAGE(activePage)
   - Chiamata da home.js / search.js / album.js / artist.js
   - Monta sidebar, monta player, restituisce il player per essere usato.
+  - Fa in modo che le frecce ‹ › della topbar vadano avanti e indietro
 */
-const initPage = (activePage) => {
-  renderSidebar(activePage);
-  const player = new Player();
-  player.mount();
-  window.player = player;
-  return player;
+const INIT_PAGE = (activePage) => {
+  RENDER_SIDEBAR(activePage);
+  RENDER_NAV_MOBILE();
+  attivaFrecce();
+  const PLAYER = new Player();
+  PLAYER.mount();
+  window.player = PLAYER;
+  AGGIORNA_SIDEBAR_PLAY(); // ora window.player esiste: evidenzio il preferito in riproduzione
+  return PLAYER;
 };
 
 /* ============================ 8. Export ============================ */
@@ -622,24 +1030,25 @@ export {
   STORAGE_KEY_LAST_SEARCH,
   // Helpers
   creaElemento,
-  fetchJSON,
-  bigArt,
-  formatTime,
-  debounce,
-  cercaInfoArtista,
+  FETCH_JSON,
+  BIG_ART,
+  FORMAT_TIME,
+  DEBOUNCE,
+  CERCA_INFO_ARTISTA,
   // Classi
   Track,
   Album,
   Artist,
   Player,
   // localStorage
-  getHistory,
-  addToHistory,
-  getFavourites,
-  isFavourite,
-  toggleFavourite,
+  GET_HISTORY,
+  ADD_TO_HISTORY,
+  GET_FAVOURITES,
+  IS_FAVOURITE,
+  TOGGLE_FAVOURITE,
   // Render
-  renderSidebarFavs,
+  RENDER_SIDEBAR_FAVS,
+  AGGIORNA_CARD_PLAY,
   // Inizializzazione
-  initPage,
+  INIT_PAGE,
 };
