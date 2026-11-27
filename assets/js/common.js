@@ -278,6 +278,12 @@ class Player {
     this.inAttesa = false; // true = deve ripartire al primo click (vedi ripristina)
     this.el = {}; // lo riempie mount(), quando il footer esiste davvero
 
+    // La coda: l'elenco in cui si muovono "precedente" e "successivo".
+    // La riempie play(track, lista); senza lista contiene il solo brano corrente.
+    this.coda = [];
+    this.mischia = false; // ⇄ il successivo e' a caso invece che in ordine
+    this.ripeti = false;  // ↻ a fine brano ricomincia lo stesso
+
     this.audio.addEventListener("timeupdate", () => {
       if (!this.el.tempoCorrente || !this.audio.duration) return;
       this.el.tempoCorrente.textContent = FORMAT_TIME(this.audio.currentTime * 1000);
@@ -285,6 +291,19 @@ class Player {
     });
 
     this.audio.addEventListener("ended", () => {
+      // ↻ acceso: lo stesso brano da capo
+      if (this.ripeti && this.currentTrack) {
+        this.audio.currentTime = 0;
+        this.audio.play().catch(() => {});
+        return;
+      }
+
+      // C'e' una coda vera: passo al prossimo invece di fermarmi
+      if (this.coda.length > 1) {
+        this.successivo();
+        return;
+      }
+
       this.isPlaying = false;
       if (this.el.toggle) this.el.toggle.textContent = "▶";
       AGGIORNA_SIDEBAR_PLAY();
@@ -321,6 +340,9 @@ class Player {
       track: this.currentTrack,
       time: this.audio.currentTime,
       playing: this.isPlaying || this.inAttesa, // inAttesa = doveva suonare ma il browser ha bloccato
+      coda: this.coda,       // cosi' precedente/successivo funzionano anche dopo aver cambiato pagina
+      mischia: this.mischia,
+      ripeti: this.ripeti,
     };
     localStorage.setItem(STORAGE_KEY_PLAYER, JSON.stringify(STATO));
   }
@@ -342,6 +364,10 @@ class Player {
     if (!STATO || !STATO.track || !STATO.track.previewUrl) return; // niente salvato
 
     this.currentTrack = STATO.track;
+    this.coda = Array.isArray(STATO.coda) && STATO.coda.length ? STATO.coda : [STATO.track];
+    this.mischia = !!STATO.mischia;
+    this.ripeti = !!STATO.ripeti;
+    this.aggiornaInterruttori();
     this.audio.src = STATO.track.previewUrl;
 
     this.el.cover.src = STATO.track.cover;
@@ -498,6 +524,10 @@ class Player {
       titolo: document.querySelector("#player-title"),
       artista: document.querySelector("#player-artist"),
       toggle: document.querySelector("#btn-toggle"),
+      mischia: document.querySelector("#btn-shuffle"),
+      precedente: document.querySelector("#btn-prev"),
+      successivo: document.querySelector("#btn-next"),
+      ripeti: document.querySelector("#btn-repeat"),
       tempoCorrente: document.querySelector("#time-current"),
       tempoTotale: document.querySelector("#time-total"),
       progressFill: document.querySelector("#progress-fill"),
@@ -505,12 +535,35 @@ class Player {
     };
 
     this.el.toggle.addEventListener("click", () => this.togglePlay());
+
+    this.el.precedente?.addEventListener("click", () => this.precedente());
+    this.el.successivo?.addEventListener("click", () => this.successivo());
+
+    this.el.mischia?.addEventListener("click", () => {
+      this.mischia = !this.mischia;
+      this.aggiornaInterruttori();
+    });
+
+    this.el.ripeti?.addEventListener("click", () => {
+      this.ripeti = !this.ripeti;
+      this.aggiornaInterruttori();
+    });
+
+    this.aggiornaInterruttori();
     this.setVolume(0.5);
     this.ripristina(); // se c'era un brano in riproduzione nella pagina prima, lo rimetto
   }
 
-  play(track) {
+  play(track, lista) {
     if (!track || !track.previewUrl) return;
+
+    // Se chi chiama passa la lista, quella diventa la coda. Se non la passa e
+    // il brano non e' gia' in coda, la coda e' il brano da solo.
+    if (Array.isArray(lista) && lista.length) {
+      this.coda = lista.filter((t) => t && t.previewUrl);
+    } else if (!this.coda.some((t) => t.id === track.id)) {
+      this.coda = [track];
+    }
 
     this.inAttesa = false; // l'utente ha scelto lui cosa suonare
 
@@ -546,6 +599,72 @@ class Player {
     document.querySelector(".track-row.is-playing")?.classList.remove("is-playing");
     document.querySelector(`.track-row[data-track-id="${track.id}"]`)?.classList.add("is-playing");
     AGGIORNA_SIDEBAR_PLAY();
+  }
+
+  /*
+    indiceInCoda()
+    - Dove sta il brano corrente dentro la coda. -1 se non c'e'.
+  */
+  indiceInCoda() {
+    if (!this.currentTrack) return -1;
+    return this.coda.findIndex((t) => t.id === this.currentTrack.id);
+  }
+
+  /*
+    precedente()
+    - Come su Spotify: se sono passati piu' di 3 secondi riporta il brano
+      all'inizio, altrimenti va a quello prima. In fondo alla coda si ricomincia.
+  */
+  precedente() {
+    if (!this.currentTrack) return;
+
+    if (this.audio.currentTime > 3) {
+      this.audio.currentTime = 0;
+      return;
+    }
+
+    const I = this.indiceInCoda();
+    if (I < 0 || this.coda.length < 2) {
+      this.audio.currentTime = 0;
+      return;
+    }
+    this.play(this.coda[(I - 1 + this.coda.length) % this.coda.length]);
+  }
+
+  /*
+    successivo()
+    - Con ⇄ spento va al brano dopo (dall'ultimo torna al primo).
+    - Con ⇄ acceso ne pesca uno a caso, mai quello che sta gia' suonando.
+  */
+  successivo() {
+    if (this.coda.length < 2) return;
+
+    const I = this.indiceInCoda();
+
+    if (this.mischia) {
+      let scelto = I;
+      while (scelto === I) scelto = Math.floor(Math.random() * this.coda.length);
+      this.play(this.coda[scelto]);
+      return;
+    }
+
+    this.play(this.coda[(I + 1) % this.coda.length]);
+  }
+
+  /*
+    aggiornaInterruttori()
+    - Accende o spegne di verde i bottoni ⇄ e ↻ (classe is-on in app.css)
+      e aggiorna aria-pressed per chi usa uno screen reader.
+  */
+  aggiornaInterruttori() {
+    if (this.el.mischia) {
+      this.el.mischia.classList.toggle("is-on", this.mischia);
+      this.el.mischia.setAttribute("aria-pressed", String(this.mischia));
+    }
+    if (this.el.ripeti) {
+      this.el.ripeti.classList.toggle("is-on", this.ripeti);
+      this.el.ripeti.setAttribute("aria-pressed", String(this.ripeti));
+    }
   }
 
   togglePlay() {
@@ -757,7 +876,7 @@ const RENDER_SIDEBAR_FAVS = () => {
       if (PLAYER.currentTrack && PLAYER.currentTrack.id === track.id) {
         PLAYER.togglePlay();
       } else {
-        PLAYER.play(track);
+        PLAYER.play(track, PREFERITI); // la coda diventa l'elenco dei preferiti
       }
     });
   });

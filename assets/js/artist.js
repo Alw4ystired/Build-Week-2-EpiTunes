@@ -177,7 +177,7 @@ const RENDER_HERO = (artist, tracks) => {
   BOTTONE_PLAY.disabled = !PRIMA_TRACCIA?.previewUrl;
   // player.play (common.js) avvia l'audio, aggiorna il footer, salva in history
   // e colora di verde la riga .track-row con lo stesso data-track-id
-  BOTTONE_PLAY.addEventListener("click", () => PLAYER.play(PRIMA_TRACCIA));
+  BOTTONE_PLAY.addEventListener("click", () => PLAYER.play(PRIMA_TRACCIA, tracks));
 
   return { IMMAGINE, CONTEGGIO };
 };
@@ -216,7 +216,7 @@ const RENDER_TOP_TRACKS = (tracks) => {
 
     // Click su tutta la riga -> play (il cuore ferma il click con stopPropagation)
     RIGA.addEventListener("click", () => {
-      if (track.previewUrl) PLAYER.play(track);
+      if (track.previewUrl) PLAYER.play(track, tracks);
     });
   });
 };
