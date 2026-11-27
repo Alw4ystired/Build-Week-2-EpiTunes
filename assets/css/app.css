@@ -1,7 +1,11 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap");
+
 /* ============================================================
    EpiTunes — CSS base
    Layout 3 zone (sidebar / main / player) responsive con Grid.
-   Palette scura ispirata a Spotify, accenti gialli brand Epicode.
+   Direzione visiva "01 · Notturno": antracite, superfici appena piu'
+   chiare, testo avorio e verde lime come unico colore d'accento.
+   Font: DM Sans (Google Fonts), con fallback di sistema.
 
    Il file e' scritto con il nesting nativo del CSS: ogni macro
    sezione (sidebar, topbar, card, hero, tracklist, player) e' un
@@ -10,33 +14,37 @@
    ============================================================ */
 
 :root {
-  --bg-base: #121212;
-  --bg-elev: #181818;
-  --bg-elev-hover: #282828;
-  --bg-sidebar: #000000;
-  --bg-player: #181818;
-  --bg-input: #ffffff;
-  --text-primary: #ffffff;
-  --text-secondary: #b3b3b3;
-  --text-input: #000000;
-  --accent: #f7d800;
-  /* giallo Epicode */
-  --accent-dark: #d6ba00;
-  --success: #1ed760;
-  /* verde "play" */
-  --danger: #e25555;
-  --border: #2a2a2a;
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
-  --shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+  --bg-base: #101112;        /* antracite: sfondo dell'app */
+  --bg-panel: #181a1b;       /* pannelli (In primo piano, coda) */
+  --bg-elev: #202223;        /* card */
+  --bg-elev-hover: #2a2c2d;  /* card / righe al passaggio del mouse */
+  --bg-sidebar: #111213;
+  --bg-player: #171819;
+  --bg-input: #202223;
+  --text-primary: #f5f3ef;   /* avorio */
+  --text-secondary: #999d9e;
+  --text-input: #f5f3ef;
+  --accent: #c8fa48;         /* verde lime: marchio, controlli attivi, azioni principali */
+  --accent-dark: #b2e23a;
+  --on-accent: #111213;      /* testo sopra il lime */
+  --success: var(--accent);  /* il vecchio "verde play" ora e' il lime */
+  --danger: #ff5268;
+  --border: #303334;
+  --radius-sm: 9px;
+  --radius-md: 15px;
+  --radius-lg: 18px;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  --font-ui: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 
-  /* Bootstrap in tema scuro ha grigi suoi: queste tre righe lo fanno
+  /* Bootstrap in tema scuro ha grigi suoi: queste righe lo fanno
      puntare alla palette qui sopra, cosi' le classi text-body e
      text-body-secondary usano i nostri colori e non i suoi. */
   --bs-body-color: var(--text-primary);
-  --bs-body-color-rgb: 255, 255, 255;
+  --bs-body-color-rgb: 245, 243, 239;
   --bs-secondary-color: var(--text-secondary);
+  --bs-body-bg: var(--bg-base);
+  --bs-body-font-family: var(--font-ui);
+  --bs-border-color: var(--border);
 }
 
 * {
@@ -49,7 +57,7 @@ body {
   margin: 0;
   background: var(--bg-base);
   color: var(--text-primary);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--font-ui);
   font-size: 14px;
   overflow: hidden;
 }
@@ -64,6 +72,12 @@ button {
   cursor: pointer;
 }
 
+/* contorno di focus visibile da tastiera, nel colore d'accento */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 /* ============================ Layout 3 zone ============================ */
 
 .app {
@@ -76,7 +90,7 @@ button {
 
 .main {
   grid-area: main;
-  background: linear-gradient(180deg, #1f1f1f 0%, var(--bg-base) 280px);
+  background: var(--bg-base);
 }
 
 /* ============================ Sidebar ============================ */
@@ -84,20 +98,28 @@ button {
 .sidebar {
   grid-area: sidebar;
   background: var(--bg-sidebar);
+  border-right: 1px solid var(--border);
 
   & .brand {
-    padding: 0 8px 24px 8px;
-    letter-spacing: 0.5px;
+    padding: 0 4px 32px 4px;
+    font-weight: 800 !important;
+    letter-spacing: -0.8px;
   }
 
   & .brand-mark {
-    width: 28px;
-    height: 28px;
+    width: 30px;
+    height: 30px;
+    border-radius: var(--radius-sm) !important;
     background: var(--accent);
+    color: var(--on-accent) !important;
+    font-weight: 800;
   }
 
   & .sidebar-nav a {
     color: var(--text-secondary);
+    border-radius: 10px !important;
+    font-weight: 500 !important;
+    transition: background 0.15s, color 0.15s;
 
     &:hover {
       color: var(--text-primary);
@@ -107,22 +129,32 @@ button {
     &.active {
       color: var(--text-primary);
       background: var(--bg-elev);
+      font-weight: 700 !important;
+
+      & .ico {
+        color: var(--accent);
+      }
     }
 
     & .ico {
       width: 22px;
+      font-size: 18px !important;
     }
   }
 
   & .sidebar-section-title {
-    font-size: 11px;
-    letter-spacing: 1px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
   }
 
   & .sidebar-list li {
     position: relative;
     font-size: 13px;
     color: var(--text-secondary);
+    padding-right: 34px !important; /* spazio per il bottone play */
+    border-radius: 8px !important;
+    transition: background 0.15s, color 0.15s;
 
     &:hover {
       color: var(--text-primary);
@@ -134,7 +166,8 @@ button {
     }
 
     &.is-playing {
-      color: var(--success);
+      color: var(--accent);
+      font-weight: 600;
 
       & .sidebar-play {
         opacity: 1;
@@ -149,7 +182,8 @@ button {
     transform: translateY(-50%);
     width: 24px;
     height: 24px;
-    background: var(--success);
+    background: var(--accent);
+    color: var(--on-accent) !important;
     font-size: 10px;
     opacity: 0;
     transition: opacity 0.15s;
@@ -159,20 +193,36 @@ button {
 /* ============================ Topbar ============================ */
 
 .topbar {
-  background: rgba(18, 18, 18, 0.7);
-  backdrop-filter: blur(20px);
+  min-height: 72px;
+  padding-inline: 34px !important;
+  background: var(--bg-base);
+  border-bottom: 1px solid var(--border);
+  z-index: 2;
 
   & .nav-btn {
-    width: 32px;
-    height: 32px;
-    background: rgba(0, 0, 0, 0.6);
-    color: #fff;
+    width: 34px;
+    height: 34px;
+    background: var(--bg-elev);
+    color: var(--text-secondary);
+    transition: background 0.15s, color 0.15s;
+
+    &:hover:not(:disabled) {
+      background: var(--bg-elev-hover);
+      color: var(--text-primary);
+    }
+
+    /* Home / Cerca su telefono: quello della pagina attuale e' acceso */
+    &.active {
+      background: var(--accent);
+      color: var(--on-accent);
+    }
   }
 
   & .user-pill {
-    background: rgba(0, 0, 0, 0.6);
-    padding: 6px 12px;
-    font-size: 13px;
+    border: 1px solid var(--border);
+    padding: 8px 14px;
+    font-size: 12px;
+    font-weight: 700 !important;
   }
 }
 
@@ -182,7 +232,187 @@ button {
 .search,
 .album-page,
 .artist-page {
-  padding: 16px 24px 32px 24px;
+  padding: 32px 34px 40px 34px !important;
+  max-width: 1500px;
+  margin-inline: auto;
+}
+
+/* ---------- Home: benvenuto ---------- */
+.home-welcome {
+  margin-bottom: 8px;
+
+  & .eyebrow {
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin: 0 0 8px 0;
+  }
+
+  & h1 {
+    font-size: clamp(26px, 3vw, 34px);
+    font-weight: 800;
+    letter-spacing: -1.2px;
+    margin: 0;
+  }
+
+  & p {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin: 8px 0 0 0;
+  }
+}
+
+/* ---------- Testata di ogni sezione: titolo a sinistra, nota a destra ---------- */
+.section-head {
+  margin: 36px 0 16px 0;
+
+  & h2 {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    margin: 0;
+  }
+
+  & .section-note {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+}
+
+/* ---------- Griglia di card ----------
+   auto-fill + minmax: le colonne diminuiscono quando lo spazio cala,
+   ma una card non scende mai sotto la larghezza minima: le copertine
+   non vengono schiacciate, si va solo a capo. */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 16px;
+}
+
+/* ---------- Pannelli "In primo piano" e "In riproduzione" ---------- */
+.home-lower {
+  display: grid;
+  grid-template-columns: 1.3fr 0.7fr;
+  gap: 18px;
+  margin-top: 36px;
+}
+
+.panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  min-width: 0;
+
+  & .section-head {
+    margin: 0 0 16px 0;
+  }
+
+  & .section-head h2 {
+    font-size: 17px;
+  }
+}
+
+.feature-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-width: 0;
+
+  & .feature-art {
+    width: 96px;
+    height: 96px;
+    border-radius: 12px;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: var(--bg-elev);
+  }
+
+  & .feature-meta {
+    min-width: 0;
+  }
+
+  & h3 {
+    font-size: 19px;
+    font-weight: 700;
+    margin: 0 0 6px 0;
+  }
+
+  & p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 0;
+  }
+}
+
+.btn-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 8px 14px;
+  border-radius: 99px;
+  border: 0;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 12px;
+  font-weight: 700;
+  transition: background 0.15s;
+
+  &:hover {
+    background: var(--accent-dark);
+  }
+}
+
+.queue-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  & li {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    border-top: 1px solid var(--border);
+    padding: 11px 4px;
+    font-size: 13px;
+    cursor: pointer;
+
+    &:hover .queue-title {
+      color: var(--accent);
+    }
+
+    &.is-current .queue-title {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    &.queue-empty {
+      cursor: default;
+      color: var(--text-secondary);
+    }
+  }
+
+  & .queue-title {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    transition: color 0.15s;
+  }
+
+  & .queue-num {
+    color: var(--text-secondary);
+    margin-right: 10px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  & .queue-info {
+    flex-shrink: 0;
+    color: var(--text-secondary);
+  }
 }
 
 /* ============================ Card ============================ */
@@ -190,14 +420,15 @@ button {
 .card {
   background: var(--bg-elev);
   border-radius: var(--radius-md);
-  transition: background 0.18s ease;
+  transition: background 0.2s ease, transform 0.2s ease;
   cursor: pointer;
+  color: var(--text-primary);
 
   & .card-image-wrap {
     aspect-ratio: 1 / 1;
     border-radius: var(--radius-sm);
     margin-bottom: 12px;
-    background: #000;
+    background: #1a1b1c;
 
     /* le card artista hanno la copertina tonda */
     &.round {
@@ -205,28 +436,47 @@ button {
     }
   }
 
+  & .card-title {
+    font-size: 14px !important;
+    font-weight: 700 !important;
+  }
+
+  & .card-sub {
+    font-size: 12.5px !important;
+    font-weight: 400;
+  }
+
+  /* play della ricerca (figlio diretto della card) */
   & .card-play {
     right: 22px;
     bottom: 82px;
-    width: 48px;
-    height: 48px;
-    background: var(--success);
-    color: #000;
-    font-size: 20px;
+    width: 44px;
+    height: 44px;
+    background: var(--accent);
+    color: var(--on-accent);
+    font-size: 16px;
     box-shadow: var(--shadow);
     opacity: 0;
     transform: translateY(8px);
     transition: opacity 0.2s, transform 0.2s;
   }
 
+  /* nella home play e cuore stanno DENTRO la copertina */
+  & .card-image-wrap .card-play {
+    right: 10px;
+    bottom: 10px;
+    width: 42px;
+    height: 42px;
+  }
+
   & .card-fav {
     top: 8px;
     right: 8px;
-    width: 32px;
-    height: 32px;
-    background: rgba(0, 0, 0, 0.5);
-    color: #fff;
-    font-size: 16px;
+    width: 30px;
+    height: 30px;
+    background: rgba(17, 18, 19, 0.72);
+    color: var(--text-primary);
+    font-size: 15px;
     opacity: 0;
     transition: opacity 0.2s;
 
@@ -239,6 +489,7 @@ button {
 
   &:hover {
     background: var(--bg-elev-hover);
+    transform: translateY(-3px);
 
     & .card-play {
       opacity: 1;
@@ -248,6 +499,24 @@ button {
     & .card-fav {
       opacity: 1;
     }
+  }
+
+  /* da tastiera: play e cuore compaiono anche col focus */
+  &:focus-within {
+    & .card-play,
+    & .card-fav {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+/* sui touch (niente hover) play e cuore restano sempre visibili */
+@media (hover: none) {
+  .card .card-play,
+  .card .card-fav {
+    opacity: 1;
+    transform: none;
   }
 }
 
@@ -275,12 +544,14 @@ button {
   }
 
   & .hero-kicker {
-    letter-spacing: 1px;
+    letter-spacing: 1.5px;
+    color: var(--accent);
   }
 
   & .hero-title {
     font-size: clamp(32px, 6vw, 72px);
-    font-weight: 900;
+    font-weight: 800;
+    letter-spacing: -1.5px;
     line-height: 1.05;
   }
 
@@ -291,8 +562,8 @@ button {
   & .btn-play-big {
     width: 56px;
     height: 56px;
-    background: var(--success);
-    color: #000;
+    background: var(--accent);
+    color: var(--on-accent);
     font-size: 24px;
   }
 
@@ -325,7 +596,7 @@ button {
   }
 
   &.is-playing {
-    color: var(--success);
+    color: var(--accent);
   }
 
   & .track-fav {
@@ -383,7 +654,7 @@ button {
       opacity: 0.7;
     }
 
-    /* la riga al centro del riquadro: bianca, piena e a grandezza normale */
+    /* la riga al centro del riquadro: avorio, piena e a grandezza normale */
     &.is-active {
       color: var(--text-primary);
       opacity: 1;
@@ -396,10 +667,19 @@ button {
 
 .search-input {
   max-width: 480px;
-  padding: 12px 16px;
+  padding: 12px 18px;
   background: var(--bg-input);
   color: var(--text-input);
+  border: 1px solid var(--border) !important;
   outline: none;
+
+  &::placeholder {
+    color: var(--text-secondary);
+  }
+
+  &:focus {
+    border-color: var(--accent) !important;
+  }
 }
 
 /* ============================ Player ============================ */
@@ -408,7 +688,7 @@ button {
   grid-area: player;
   background: var(--bg-player);
   border-top: 1px solid var(--border);
-  padding: 12px 16px;
+  padding: 12px 24px;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
 
@@ -417,8 +697,9 @@ button {
   }
 
   & .player-cover {
-    width: 56px;
-    height: 56px;
+    width: 52px;
+    height: 52px;
+    border-radius: 7px !important;
   }
 
   & .player-meta {
@@ -427,10 +708,11 @@ button {
 
   & .player-title {
     font-size: 13px;
+    font-weight: 700 !important;
   }
 
   & .player-artist {
-    font-size: 11px;
+    font-size: 12px;
   }
 
   & .btn-ctrl {
@@ -443,25 +725,33 @@ button {
 
     /* ⇄ e ↻ accesi */
     &.is-on {
-      color: var(--success);
+      color: var(--accent);
     }
   }
 
   & .btn-play {
-    width: 36px;
-    height: 36px;
+    width: 38px;
+    height: 38px;
+    background: var(--text-primary) !important;
+    color: var(--bg-base) !important;
+    transition: transform 0.15s;
+
+    &:hover {
+      transform: scale(1.06);
+    }
   }
 
   & .player-progress {
-    max-width: 600px;
+    max-width: 560px;
     font-size: 11px;
     color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
   }
 
   & .progress-bar,
   & .volume-bar {
     height: 4px;
-    background: #4d4d4d;
+    background: #454849;
     border-radius: 2px;
     overflow: hidden;
     cursor: pointer;
@@ -471,18 +761,21 @@ button {
   & .progress-fill,
   & .volume-fill {
     width: 0%;
-    background: var(--text-primary);
+    background: var(--accent);
     border-radius: 2px;
   }
 
-  /* le due barre restano separate: ognuna scalda solo il proprio riempimento */
-  & .progress-bar:hover .progress-fill,
+  & .volume-fill {
+    background: var(--text-primary);
+  }
+
+  /* il volume si accende di lime solo quando ci passi sopra */
   & .volume-bar:hover .volume-fill {
-    background: var(--success);
+    background: var(--accent);
   }
 
   & .volume-bar {
-    width: 120px;
+    width: 100px;
   }
 }
 
@@ -498,7 +791,75 @@ button {
 
 /* ============================ Responsive ============================ */
 
-/* da tablet in su: compare la sidebar stretta e il player a tre colonne */
+/* TELEFONO (sotto 576px): niente sidebar, Home/Cerca diventano bottoni
+   nella topbar, player a due colonne (brano | controlli), 2 card per riga */
+@media (max-width: 575.98px) {
+  .topbar {
+    padding-inline: 16px !important;
+    min-height: 62px;
+
+    & .user-pill {
+      font-size: 11px;
+      padding: 7px 11px;
+    }
+  }
+
+  .home,
+  .search,
+  .album-page,
+  .artist-page {
+    padding: 22px 16px 32px 16px !important;
+  }
+
+  .card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .card {
+    padding: 8px !important;
+  }
+
+  .section-head {
+    margin-top: 28px;
+
+    & h2 {
+      font-size: 18px;
+    }
+  }
+
+  .home-lower {
+    grid-template-columns: 1fr;
+  }
+
+  .feature-row .feature-art {
+    width: 76px;
+    height: 76px;
+  }
+
+  .player {
+    padding: 10px 14px;
+    grid-template-columns: minmax(0, 1fr) auto;
+
+    & .player-cover {
+      width: 44px;
+      height: 44px;
+    }
+
+    & .player-controls {
+      gap: 10px !important;
+    }
+
+    /* su telefono restano precedente / play / successivo e la barra */
+    & #btn-shuffle,
+    & #btn-repeat,
+    & .player-progress span {
+      display: none;
+    }
+  }
+}
+
+/* TABLET e oltre: sidebar e player a tre colonne */
 @media (min-width: 576px) {
   .app {
     grid-template-columns: 80px 1fr;
@@ -510,7 +871,39 @@ button {
   }
 }
 
-/* da desktop in su: sidebar larga e copertina grande */
+/* TABLET (576px – 991px): sidebar stretta a sole icone, pannelli impilati */
+@media (min-width: 576px) and (max-width: 991.98px) {
+  .sidebar {
+    padding-inline: 12px !important;
+
+    & .brand {
+      justify-content: center;
+      padding-inline: 0;
+    }
+  }
+
+  .topbar {
+    padding-inline: 24px !important;
+  }
+
+  .home,
+  .search,
+  .album-page,
+  .artist-page {
+    padding: 28px 24px 36px 24px !important;
+  }
+
+  .card-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 14px;
+  }
+
+  .home-lower {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* DESKTOP (da 992px): sidebar larga e copertina grande */
 @media (min-width: 992px) {
   .app {
     grid-template-columns: 240px 1fr;

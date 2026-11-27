@@ -442,7 +442,7 @@ class Player {
 
     const PLAYER_META = creaElemento("div", "player-meta", PLAYER_TRACK);
     creaElemento("p", "player-title fw-semibold text-truncate m-0", PLAYER_META, "Seleziona un brano", "player-title");
-    creaElemento("p", "player-artist text-body-secondary text-truncate m-0", PLAYER_META, "—", "player-artist");
+    creaElemento("p", "player-artist text-body-secondary text-truncate m-0", PLAYER_META, "La tua musica ti aspetta", "player-artist");
 
     /* ---------- CENTRO: controlli + barra di avanzamento ---------- */
     const PLAYER_CENTER = creaElemento("div", "player-center d-flex flex-column align-items-center gap-2", FOOTER);
@@ -798,8 +798,8 @@ const TOGGLE_FAVOURITE = (track) => {
     sia i bottoncini nella topbar (sotto i 576px).
 */
 const LINKS_NAV = [
-  { href: "index.html", page: "home", ico: "🏠", text: "Home" },
-  { href: "search.html", page: "search", ico: "🔍", text: "Cerca" },
+  { href: "index.html", page: "home", ico: "⌂", text: "Home" },
+  { href: "search.html", page: "search", ico: "⌕", text: "Cerca" },
 ];
 
 /*
@@ -843,11 +843,11 @@ const RENDER_SIDEBAR = (activePage) => {
   - Stesse classi delle frecce (nav-btn rounded-circle...): stessa grandezza e stile.
   - d-flex + align/justify-content-center centrano l'icona dentro il cerchio.
 */
-const RENDER_NAV_MOBILE = () => {
+const RENDER_NAV_MOBILE = (activePage) => {
   const TOPBAR_NAV = document.querySelector(".topbar-nav");
   if (!TOPBAR_NAV) return;
 
-  LINKS_NAV.forEach(({ href, ico, text }) => {
+  LINKS_NAV.forEach(({ href, page, ico, text }) => {
     const A = creaElemento(
       "a",
       "nav-btn rounded-circle border-0 lh-1 d-flex d-sm-none align-items-center justify-content-center",
@@ -856,6 +856,11 @@ const RENDER_NAV_MOBILE = () => {
     );
     A.href = href;
     A.setAttribute("aria-label", text);
+    // la pagina in cui sono e' accesa (lime), come il link attivo della sidebar
+    if (activePage === page) {
+      A.classList.add("active");
+      A.setAttribute("aria-current", "page");
+    }
   });
 };
 
@@ -1002,7 +1007,7 @@ const attivaFrecce = () => {
 */
 const INIT_PAGE = (activePage) => {
   RENDER_SIDEBAR(activePage);
-  RENDER_NAV_MOBILE();
+  RENDER_NAV_MOBILE(activePage);
   attivaFrecce();
   const PLAYER = new Player();
   PLAYER.mount();
