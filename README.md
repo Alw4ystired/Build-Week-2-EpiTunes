@@ -10,9 +10,9 @@ L'applicazione cerca brani, album e artisti, riproduce le anteprime audio di 30 
 
 ## Anteprima
 
-La home: nella sidebar brani, album e artisti preferiti in tre elenchi separati; al centro i preferiti con i filtri Tracce / Album / Artisti, la rotazione recente e i suggerimenti; in basso il player.
+La home: nella sidebar brani, album e artisti preferiti in tre elenchi separati; al centro i preferiti con i filtri Tracce / Album / Artisti, la rotazione recente, il carosello "In primo piano" con la coda a fianco e le righe di suggerimenti da otto card; in basso il player.
 
-![La home di EpiTunes: sidebar con tracce, album e artisti preferiti, la sezione "I tuoi preferiti" con i filtri, la riga "Riascolta" e il player in riproduzione](assets/img/home.webp)
+![La home di EpiTunes: sidebar con tracce, album e artisti preferiti, la sezione "I tuoi preferiti" con i filtri, la riga "Riascolta", il carosello "In primo piano" accanto alla coda "In riproduzione", la riga "Suggerimenti pop" da otto card e il player in basso](assets/img/home.webp)
 
 La ricerca interroga l'API mentre si digita e divide i risultati in brani, album e artisti.
 
@@ -187,14 +187,14 @@ Le attività sono distribuite per giorno sulla bacheca del gruppo, dove vengono 
 - [x] Adattamento mobile-first dei breakpoint
 - [x] Grafica portata sulle classi di Bootstrap e `app.css` riscritto per zone
 - [x] Tempo totale del player preso dalla durata vera dell'anteprima
-- [x] Home: suggerimenti a 6 card, una riga piena della griglia
+- [x] Home: suggerimenti a 8 card, una riga piena della griglia sugli schermi larghi
 - [x] Event delegation sulle griglie: un ascoltatore per griglia invece di tre per card
 - [x] README con architettura, scelte tecniche e stato
 - [x] Pubblicazione su GitHub Pages
 
 ### Extra
 
-Cose che vanno oltre il minimo. Le spuntate sono già nel progetto, le altre sono decise ma non ancora iniziate.
+Cose che vanno oltre il minimo richiesto dalla traccia. Sono tutte già nel progetto.
 
 - [x] **Foto degli artisti** da una seconda API: iTunes non le fornisce
 - [x] **Frecce avanti e indietro** nella topbar, collegate alla cronologia del browser, che si disattivano da sole quando non c'è dove andare
@@ -204,7 +204,6 @@ Cose che vanno oltre il minimo. Le spuntate sono già nel progetto, le altre son
 - [x] **Riproduzione continua fra le pagine**: il brano e il secondo raggiunto vengono salvati uscendo dalla pagina e ripresi in quella dopo. Se il browser blocca la ripartenza automatica il player resta in pausa e basta un click
 - [x] **Navigazione da telefono**: sotto i 576px la sidebar sparisce, e Home e Cerca compaiono come icone nella topbar
 - [x] **Testi delle canzoni** da una terza API, LRCLIB: nella pagina del brano scorrono in un riquadro, con la riga al centro accesa e le altre smorzate
-- [ ] **Playlist**: pagina `playlist.html` con il suo `playlist.js`, per raccogliere i brani in elenchi creati dall'utente
 - [x] **Preferiti divisi per tipo**: brani, album e artisti in tre elenchi separati, con "+ Salva album" nella pagina album e "Segui" in quella artista
 - [x] **Ricerche recenti**: le ultime cinque parole cercate compaiono in una tendina attaccata alla casella di ricerca, e si possono togliere una a una
 - [x] **Carosello "In primo piano"**: cinque brani che scorrono da soli ogni quattro secondi, con pallini e frecce, e si fermano passandoci sopra col mouse

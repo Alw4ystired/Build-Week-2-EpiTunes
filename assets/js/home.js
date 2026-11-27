@@ -618,7 +618,7 @@ const CARICA_SUGGERIMENTI = async (termine) => {
     const BRANI = DATI.results.map((raw) => new Track(raw));// da ogni risultato "grezzo" dell'API crea un oggetto Track, in un nuovo array
 
     BRANI.sort(() => Math.random() - 0.5); // ordine diverso a ogni caricamento
-    return BRANI.slice(0, 6); // 6 = una riga piena della griglia su desktop
+    return BRANI.slice(0, 8); // 8 = una riga piena della griglia sugli schermi larghi
 
   } catch (err) {
     console.error(err);
