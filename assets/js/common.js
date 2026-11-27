@@ -601,6 +601,9 @@ class Player {
     document.querySelector(".track-row.is-playing")?.classList.remove("is-playing");
     document.querySelector(`.track-row[data-track-id="${track.id}"]`)?.classList.add("is-playing");
     AGGIORNA_SIDEBAR_PLAY();
+
+    // Avviso le pagine che il brano e' cambiato (es. track.js aggiorna hero e testo)
+    window.dispatchEvent(new CustomEvent("cambio-brano", { detail: track }));
   }
 
   /*
