@@ -30,6 +30,14 @@ const PLAYER = INIT_PAGE("home");
 const TRACK_HERO = document.querySelector("#track-hero");
 const TRACK_LYRICS = document.querySelector("#track-lyrics");
 
+// Serve per togliere i listener sull'audio del brano precedente quando
+// la pagina si ridisegna per un nuovo brano (altrimenti si accumulano)
+let ascoltatoriHero = null;
+
+// Numero del caricamento in corso: se nel frattempo ne parte un altro
+// (cambio brano veloce), i risultati del vecchio vengono ignorati
+let caricamentoAttuale = 0;
+
 /* ============================ TESTO (LYRICS) ============================ */
 
 /* ============================ TESTO (LYRICS) ============================ */
@@ -219,6 +227,10 @@ const RENDER_HERO = (track, raw) => {
     }
   };
 
+  ascoltatoriHero?.abort(); // tolgo i listener del brano mostrato prima
+  ascoltatoriHero = new AbortController();
+  const OPZIONI = { signal: ascoltatoriHero.signal };
+
   AGGIORNA_ICONA(); // se il brano sta gia' suonando (arrivo dal footer) parte con ⏸
 
   BOTTONE_PLAY.addEventListener("click", () => {
@@ -231,9 +243,9 @@ const RENDER_HERO = (track, raw) => {
   });
 
   // Se play/pausa/fine arrivano da fuori (es. dal pulsante nel footer), aggiorno comunque l'icona
-  PLAYER.audio.addEventListener("play", AGGIORNA_ICONA);
-  PLAYER.audio.addEventListener("pause", AGGIORNA_ICONA);
-  PLAYER.audio.addEventListener("ended", AGGIORNA_ICONA);
+  PLAYER.audio.addEventListener("play", AGGIORNA_ICONA, OPZIONI);
+  PLAYER.audio.addEventListener("pause", AGGIORNA_ICONA, OPZIONI);
+  PLAYER.audio.addEventListener("ended", AGGIORNA_ICONA, OPZIONI);
 
   const BOTTONE_CUORE = creaElemento("button", "btn-fav-big rounded-circle fs-5", AZIONI);
   BOTTONE_CUORE.type = "button";
@@ -357,6 +369,8 @@ const RENDER_TESTO = (testo) => {
 /* ============================ CARICAMENTO ============================ */
 
 const LOAD_TRACK = async () => {
+  const QUESTO_CARICAMENTO = ++caricamentoAttuale;
+
   // Leggo l'id dall'indirizzo: track.html?id=1440831203 -> "1440831203"
   const ID = new URLSearchParams(window.location.search).get("id");
 
@@ -371,6 +385,7 @@ const LOAD_TRACK = async () => {
   // Una sola richiesta: il brano con quell'id.
   // try/catch e controllo response.ok sono gia' dentro FETCH_JSON (common.js).
   const DATI = await FETCH_JSON(`${API_BASE}/lookup?id=${encodeURIComponent(ID)}`);
+  if (QUESTO_CARICAMENTO !== caricamentoAttuale) return; // e' gia' partito un altro brano
 
   // results[0] deve essere il brano (wrapperType "track")
   const RAW = DATI.results[0];
@@ -390,7 +405,20 @@ const LOAD_TRACK = async () => {
   // Passo anche album e durata: LRCLIB trova piu' facilmente
   // la versione giusta del brano (es. non la versione live o remix)
   const TESTO = await CERCA_TESTO(TRACK.title, TRACK.artist, TRACK.album, TRACK.durationMs);
+  if (QUESTO_CARICAMENTO !== caricamentoAttuale) return; // testo di un brano vecchio: lo scarto
   RENDER_TESTO(TESTO);
 };
 
 LOAD_TRACK();
+
+// Quando il player cambia brano (sidebar, avanti/indietro, fine coda...)
+// la pagina segue il brano in ascolto: aggiorno l'id nell'indirizzo e ricarico.
+// replaceState non ricarica la pagina, cambia solo l'URL (cosi' anche F5 resta sul brano giusto).
+window.addEventListener("cambio-brano", (evento) => {
+  const BRANO = evento.detail;
+  const ID_ATTUALE = new URLSearchParams(window.location.search).get("id");
+  if (!BRANO || String(BRANO.id) === ID_ATTUALE) return; // e' gia' quello mostrato
+
+  history.replaceState(null, "", `track.html?id=${BRANO.id}`);
+  LOAD_TRACK();
+});
