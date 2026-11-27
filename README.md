@@ -39,7 +39,7 @@ Da telefono la sidebar lascia il posto alle icone nella topbar, e le card scendo
 - **Pagina artista** con foto, genere e brani più ascoltati
 - **Pagina brano**, raggiungibile cliccando la copertina in basso a sinistra nel player, con il **testo della canzone**
 - **Frecce avanti e indietro** nella topbar, collegate alla cronologia del browser
-- **Ultima ricerca** ripristinata alla riapertura della pagina Cerca
+- **Ultima ricerca** ripristinata alla riapertura della pagina Cerca, e le ultime cinque in una tendina sulla casella
 
 ---
 
@@ -129,6 +129,7 @@ Album: `GET_FAV_ALBUMS`, `IS_FAV_ALBUM`, `TOGGLE_FAV_ALBUM`. Artisti: `GET_FAV_A
 | `epitunes_last_search` | ultimo termine cercato, salvato solo a ricerca riuscita |
 | `epitunes_player` | brano in riproduzione, secondo raggiunto e se stava suonando |
 | `epitunes_volume` | livello del volume, scritto a fine trascinamento |
+| `epitunes_recent_searches` | ultime 5 parole cercate, la più recente per prima |
 
 In `epitunes_history` e `epitunes_favourites` viene salvato l'oggetto `Track` intero, non il solo id: così la home può ricostruire le card senza richiamare l'API. Stessa cosa per gli oggetti `Album` e `Artist` nelle due chiavi dei preferiti per tipo.
 
@@ -205,4 +206,5 @@ Cose che vanno oltre il minimo. Le spuntate sono già nel progetto, le altre son
 - [x] **Testi delle canzoni** da una terza API, LRCLIB: nella pagina del brano scorrono in un riquadro, con la riga al centro accesa e le altre smorzate
 - [ ] **Playlist**: pagina `playlist.html` con il suo `playlist.js`, per raccogliere i brani in elenchi creati dall'utente
 - [x] **Preferiti divisi per tipo**: brani, album e artisti in tre elenchi separati, con "+ Salva album" nella pagina album e "Segui" in quella artista
-- [ ] **Ricerche recenti** in un menu a tendina sulla casella di ricerca: oggi viene conservata solo l'ultima, e viene ripristinata all'apertura della pagina
+- [x] **Ricerche recenti**: le ultime cinque parole cercate compaiono in una tendina attaccata alla casella di ricerca, e si possono togliere una a una
+- [x] **Carosello "In primo piano"**: cinque brani che scorrono da soli ogni quattro secondi, con pallini e frecce, e si fermano passandoci sopra col mouse
