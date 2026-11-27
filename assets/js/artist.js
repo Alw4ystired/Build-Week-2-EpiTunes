@@ -14,6 +14,7 @@ import {
   CERCA_INFO_ARTISTA, // per foto artista + follower
   IS_FAV_ARTIST,      // ⭐ NUOVO — l'artista e' gia' seguito?
   TOGGLE_FAV_ARTIST,  // ⭐ NUOVO — segui / smetti di seguire
+  CREA_PLAY_E_MISCHIA, // ⭐ NUOVO — bottoni ▶ e ⇄ dell'hero
 } from "./common.js";
 
 /* ============================================================
@@ -161,7 +162,6 @@ const CREA_LINK_TESTO = (track, genitore) => {
 const RENDER_HERO = (artist, tracks) => {
   ARTIST_HERO.replaceChildren(); // tolgo il messaggio "Caricamento..."
 
-  const PRIMA_TRACCIA = tracks[0]; // puo' essere undefined se l'artista non ha brani
 
   // Foto: cerchio nero con dentro un'immagine INVISIBILE e SENZA indirizzo.
   // L'indirizzo lo decide loadArtist dopo (cosi' compare una sola immagine).
@@ -184,16 +184,10 @@ const RENDER_HERO = (artist, tracks) => {
   const CONTEGGIO = creaElemento("span", undefined, SOTTO_RIGA);
  
 
-  /* ---------- Bottone Play (sulla prima traccia) ---------- */
+  /* ---------- Bottoni ▶ e ⇄ ---------- */
   const AZIONI = creaElemento("div", "hero-actions d-flex align-items-center gap-3", META);
-  const BOTTONE_PLAY = creaElemento("button", "btn-play-big rounded-circle border-0", AZIONI, "▶");
-  BOTTONE_PLAY.type = "button";
-  BOTTONE_PLAY.setAttribute("aria-label", `Riproduci ${artist.name}`);
-  // Spento se non ci sono brani o se il primo non ha l'anteprima
-  BOTTONE_PLAY.disabled = !PRIMA_TRACCIA?.previewUrl;
-  // player.play (common.js) avvia l'audio, aggiorna il footer, salva in history
-  // e colora di verde la riga .track-row con lo stesso data-track-id
-  BOTTONE_PLAY.addEventListener("click", () => PLAYER.play(PRIMA_TRACCIA, tracks));
+  // ⭐ MODIFICA — ▶ e ⇄ li crea CREA_PLAY_E_MISCHIA (common.js), come nella pagina album
+  CREA_PLAY_E_MISCHIA(AZIONI, tracks, artist.name);
 
   // ⭐ NUOVO — "Segui": aggiunge o toglie l'artista dagli "Artisti preferiti".
   const BOTTONE_SEGUI = creaElemento("button", "btn btn-outline-light btn-sm rounded-pill px-3", AZIONI);

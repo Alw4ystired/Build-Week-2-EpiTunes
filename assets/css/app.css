@@ -417,6 +417,20 @@ button {
     font-size: 24px;
   }
 
+  /* ⇄ accanto al play delle pagine album e artista: grigio, lime quando e' acceso */
+  & .btn-shuffle-big {
+    color: var(--text-secondary);
+    transition: color 0.15s;
+
+    &:hover {
+      color: var(--text-primary);
+    }
+
+    &.is-on {
+      color: var(--accent);
+    }
+  }
+
   & .btn-fav-big {
     width: 36px;
     height: 36px;

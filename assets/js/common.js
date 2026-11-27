@@ -1068,6 +1068,97 @@ const AGGIORNA_CARD_PLAY = () => {
   });
 };
 
+// ⭐ NUOVO
+/*
+  CREA_PLAY_E_MISCHIA(contenitore, tracks, nome)
+  - Crea il grande ▶ e, alla sua destra, il ⇄ delle pagine album e artista.
+    Prima il codice stava solo in album.js: qui lo usano tutte e due le pagine.
+  - tracks: i brani della pagina (diventano la coda del player)
+  - nome:   titolo dell'album o nome dell'artista (per gli aria-label)
+
+  Cosa fa il ▶ quando lo premi:
+    - sta suonando un brano di questa pagina -> pausa
+    - ⇄ acceso  -> parte un brano A CASO (mai quello appena sentito):
+                   ogni click sul play = un brano diverso
+    - ⇄ spento  -> riprende il brano in pausa, oppure parte dal primo
+  Il ⇄ e' lo stesso interruttore del ⇄ del player in basso (player.mischia):
+  quando e' acceso anche ⏭ e la fine di un brano scelgono a caso.
+*/
+const CREA_PLAY_E_MISCHIA = (contenitore, tracks, nome) => {
+  const PLAYER = window.player;
+  const CON_ANTEPRIMA = tracks.filter((track) => track.previewUrl); // solo questi si possono suonare
+
+  /* ---------- ▶ / ⏸ ---------- */
+  const BOTTONE_PLAY = creaElemento("button", "btn-play-big rounded-circle border-0", contenitore, "▶");
+  BOTTONE_PLAY.type = "button";
+  BOTTONE_PLAY.disabled = CON_ANTEPRIMA.length === 0; // niente anteprime = bottone spento
+
+  // Il brano in ascolto e' uno di questa pagina?
+  const SUONA_QUESTA_PAGINA = () => {
+    if (!PLAYER.currentTrack) return false;
+    return tracks.some((track) => track.id === PLAYER.currentTrack.id);
+  };
+
+  // ⏸ se sta suonando un brano di questa pagina, altrimenti ▶
+  const AGGIORNA_PLAY = () => {
+    if (SUONA_QUESTA_PAGINA() && PLAYER.isPlaying) {
+      BOTTONE_PLAY.textContent = "⏸";
+      BOTTONE_PLAY.setAttribute("aria-label", `Metti in pausa ${nome}`);
+    } else {
+      BOTTONE_PLAY.textContent = "▶";
+      BOTTONE_PLAY.setAttribute("aria-label", `Riproduci ${nome}`);
+    }
+  };
+  AGGIORNA_PLAY(); // se arrivo sulla pagina con un suo brano gia' in ascolto parte con ⏸
+
+  // Un brano a caso tra quelli con l'anteprima, diverso da quello appena sentito
+  const BRANO_A_CASO = () => {
+    let scelto = CON_ANTEPRIMA[Math.floor(Math.random() * CON_ANTEPRIMA.length)];
+    while (CON_ANTEPRIMA.length > 1 && PLAYER.currentTrack && scelto.id === PLAYER.currentTrack.id) {
+      scelto = CON_ANTEPRIMA[Math.floor(Math.random() * CON_ANTEPRIMA.length)];
+    }
+    return scelto;
+  };
+
+  BOTTONE_PLAY.addEventListener("click", () => {
+    if (SUONA_QUESTA_PAGINA() && PLAYER.isPlaying) {
+      PLAYER.togglePlay(); // sta suonando: pausa
+    } else if (PLAYER.mischia) {
+      PLAYER.play(BRANO_A_CASO(), tracks); // ⇄ acceso: brano a caso, coda = tutti i brani
+    } else if (SUONA_QUESTA_PAGINA()) {
+      PLAYER.togglePlay(); // ⇄ spento ed era in pausa: riprende da dove era
+    } else {
+      PLAYER.play(CON_ANTEPRIMA[0], tracks); // ⇄ spento: dal primo brano
+    }
+    AGGIORNA_PLAY();
+  });
+
+  // Se play/pausa arrivano da fuori (footer, tracklist, sidebar) l'icona si aggiorna lo stesso
+  PLAYER.audio.addEventListener("play", AGGIORNA_PLAY);
+  PLAYER.audio.addEventListener("pause", AGGIORNA_PLAY);
+  window.addEventListener("cambio-brano", AGGIORNA_PLAY);
+
+  /* ---------- ⇄ ---------- */
+  const BOTTONE_MISCHIA = creaElemento("button", "btn-shuffle-big border-0 bg-transparent fs-3 lh-1 p-0", contenitore, "⇄");
+  BOTTONE_MISCHIA.type = "button";
+
+  const AGGIORNA_MISCHIA = () => {
+    BOTTONE_MISCHIA.classList.toggle("is-on", PLAYER.mischia); // is-on = lime (app.css)
+    BOTTONE_MISCHIA.setAttribute("aria-pressed", String(PLAYER.mischia));
+    BOTTONE_MISCHIA.setAttribute("aria-label", PLAYER.mischia ? "Disattiva riproduzione casuale" : "Attiva riproduzione casuale");
+  };
+  AGGIORNA_MISCHIA(); // parte acceso se il ⇄ era gia' acceso
+
+  BOTTONE_MISCHIA.addEventListener("click", () => {
+    PLAYER.mischia = !PLAYER.mischia;
+    PLAYER.aggiornaInterruttori(); // accende/spegne anche il ⇄ del player
+    AGGIORNA_MISCHIA();
+  });
+
+  // Se si usa il ⇄ del player in basso, aggiorno anche questo
+  if (PLAYER.el.mischia) PLAYER.el.mischia.addEventListener("click", AGGIORNA_MISCHIA);
+};
+
 const AGGIORNA_SIDEBAR_PLAY = () => {
   AGGIORNA_CARD_PLAY(); // stesso momento: aggiorno anche le card
 
@@ -1205,6 +1296,7 @@ export {
   // Render
   RENDER_SIDEBAR_FAVS,
   AGGIORNA_CARD_PLAY,
+  CREA_PLAY_E_MISCHIA, // ⭐ NUOVO — album.js e artist.js
   // Inizializzazione
   INIT_PAGE,
 };
