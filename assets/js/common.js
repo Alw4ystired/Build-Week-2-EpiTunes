@@ -67,7 +67,7 @@ const STORAGE_KEY_HISTORY = "epitunes_history";
 const STORAGE_KEY_FAVOURITES = "epitunes_favourites";
 const STORAGE_KEY_LAST_SEARCH = "epitunes_last_search";
 const STORAGE_KEY_PLAYER = "epitunes_player"; // brano in riproduzione + secondo a cui era arrivato
-const STORAGE_KEY_VOLUME = "epitunes_volume"; 
+const STORAGE_KEY_VOLUME = "epitunes_volume";
 const DEFAULT_VOLUME = 0.5;
 const MAX_HISTORY = 12;
 
@@ -552,7 +552,7 @@ class Player {
     });
 
     this.aggiornaInterruttori();
-   this.setVolume(GET_VOLUME());
+    this.setVolume(GET_VOLUME());
     this.ripristina(); // se c'era un brano in riproduzione nella pagina prima, lo rimetto
   }
 
@@ -691,12 +691,16 @@ class Player {
   }
 
   setVolume(v) {
-  const VOLUME = Math.min(1, Math.max(0, v));
-  this.audio.volume = VOLUME;
-  localStorage.setItem(STORAGE_KEY_VOLUME, String(VOLUME));
+    const VOLUME = Math.min(1, Math.max(0, v));
+    this.audio.volume = VOLUME;
 
-  if (this.el.volumeFill) this.el.volumeFill.style.width = `${VOLUME * 100}%`;
-}
+    // Trascinando la barra questo metodo viene chiamato a ogni movimento del
+    // mouse: SALVA_VOLUME aspetta che la mano si fermi, cosi' si scrive su
+    // localStorage una volta sola invece di decine.
+    SALVA_VOLUME(VOLUME);
+
+    if (this.el.volumeFill) this.el.volumeFill.style.width = `${VOLUME * 100}%`;
+  }
 
   seek(percent) {
     if (!this.audio.duration) return;
@@ -754,6 +758,13 @@ const GET_VOLUME = () => {
   const VOLUME = Number(SALVATO);
   return Number.isNaN(VOLUME) ? DEFAULT_VOLUME : VOLUME;
 };
+
+/*
+  SALVA_VOLUME(v)
+  - Scrive il volume in localStorage, ma solo 300ms dopo l'ultima chiamata.
+  - Riusa DEBOUNCE (sezione 2), lo stesso che rimanda la ricerca mentre si digita.
+*/
+const SALVA_VOLUME = DEBOUNCE((v) => localStorage.setItem(STORAGE_KEY_VOLUME, String(v)), 300);
 
 const GET_HISTORY = () => READ_ARRAY(STORAGE_KEY_HISTORY);
 
