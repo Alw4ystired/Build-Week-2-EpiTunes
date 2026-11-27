@@ -69,6 +69,8 @@ const STORAGE_KEY_LAST_SEARCH = "epitunes_last_search";
 const STORAGE_KEY_PLAYER = "epitunes_player"; // brano in riproduzione + secondo a cui era arrivato
 const STORAGE_KEY_VOLUME = "epitunes_volume";
 const DEFAULT_VOLUME = 0.5;
+const STORAGE_KEY_RECENT_SEARCHES = "epitunes_recent_searches"; // elenco delle ultime parole cercate
+const MAX_RECENT_SEARCHES = 5;
 const MAX_HISTORY = 12;
 
 /* ============================ 2. Helpers ============================ */
@@ -769,8 +771,31 @@ const GET_VOLUME = () => {
 */
 const SALVA_VOLUME = DEBOUNCE((v) => localStorage.setItem(STORAGE_KEY_VOLUME, String(v)), 300);
 
-const GET_HISTORY = () => READ_ARRAY(STORAGE_KEY_HISTORY);
+/*
+  Ricerche recenti (array di stringhe, la piu' recente per prima)
+  getRecentSearches() -> elenco delle parole cercate
+  addRecentSearch(term) -> aggiunge in testa, toglie il doppione (anche se scritto
+                           con maiuscole diverse), taglia a MAX_RECENT_SEARCHES
+  removeRecentSearch(term) -> toglie una parola dall'elenco
+*/
 
+const GET_RECENT_SEARCHES = () => READ_ARRAY(STORAGE_KEY_RECENT_SEARCHES);
+
+const ADD_RECENT_SEARCH = (term) => {
+  const PULITO = term.trim();
+  if (!PULITO) return; // niente da salvare
+
+  const SENZA_DUPLICATO = GET_RECENT_SEARCHES().filter((t) => t.toLowerCase() !== PULITO.toLowerCase());
+  WRITE_ARRAY(STORAGE_KEY_RECENT_SEARCHES, [PULITO, ...SENZA_DUPLICATO].slice(0, MAX_RECENT_SEARCHES));
+};
+
+const REMOVE_RECENT_SEARCH = (term) => {
+  WRITE_ARRAY(
+    STORAGE_KEY_RECENT_SEARCHES,
+    GET_RECENT_SEARCHES().filter((t) => t !== term)
+  );
+};
+const GET_HISTORY = () => READ_ARRAY(STORAGE_KEY_HISTORY);
 /*
   addToHistory(track)
   - Rimuove l'eventuale copia dello stesso brano, poi lo rimette in testa:
@@ -1051,6 +1076,9 @@ export {
   GET_FAVOURITES,
   IS_FAVOURITE,
   TOGGLE_FAVOURITE,
+  GET_RECENT_SEARCHES,
+  ADD_RECENT_SEARCH,
+  REMOVE_RECENT_SEARCH,
   // Render
   RENDER_SIDEBAR_FAVS,
   AGGIORNA_CARD_PLAY,

@@ -11,6 +11,9 @@ import {
   STORAGE_KEY_LAST_SEARCH,
   IS_FAVOURITE,
   TOGGLE_FAVOURITE,
+   GET_RECENT_SEARCHES,
+  ADD_RECENT_SEARCH,
+  REMOVE_RECENT_SEARCH,
   RENDER_SIDEBAR_FAVS,
   CERCA_INFO_ARTISTA,
   AGGIORNA_CARD_PLAY,
@@ -217,9 +220,82 @@ const DO_SEARCH = async (term) => {
   ROW_ARTISTS.hidden = ARTISTS.length === 0;
 };
 
+/* ============================ Ricerche recenti ============================ */
+
+/*
+  Il pannello sta dentro .search-box (che e' position-relative) e compare sotto
+  la barra quando ci si clicca. Ogni ricerca e' una "chip": cliccandola si rifa'
+  la ricerca, cliccando la × si toglie dall'elenco.
+  Si salva una ricerca quando premi Invio o quando esci dalla barra (blur),
+  NON a ogni lettera: altrimenti nell'elenco finirebbero "l", "li", "lin"...
+*/
+const SEARCH_BOX = document.querySelector(".search-box");
+const PANNELLO_RECENTI = creaElemento("div", "recent-searches", SEARCH_BOX);
+PANNELLO_RECENTI.hidden = true;
+
+// Premere sul pannello farebbe perdere il focus alla barra (blur) prima del click:
+// con preventDefault il focus resta e il click sulla chip funziona.
+PANNELLO_RECENTI.addEventListener("mousedown", (event) => event.preventDefault());
+
+const RENDER_RECENTI = () => {
+  const RECENTI = GET_RECENT_SEARCHES();
+
+  PANNELLO_RECENTI.replaceChildren();
+
+  if (RECENTI.length === 0) {
+    PANNELLO_RECENTI.hidden = true;
+    return;
+  }
+
+  creaElemento("p", "recent-title text-uppercase text-body-secondary fw-semibold mb-2", PANNELLO_RECENTI, "Ricerche recenti");
+  const LISTA = creaElemento("div", "d-flex flex-wrap gap-2", PANNELLO_RECENTI);
+
+  RECENTI.forEach((termine) => {
+    const CHIP = creaElemento("span", "recent-chip d-inline-flex align-items-center rounded-pill", LISTA);
+
+    const BTN_CERCA = creaElemento("button", "recent-chip-text border-0 bg-transparent", CHIP, termine);
+    BTN_CERCA.type = "button";
+    BTN_CERCA.addEventListener("click", () => {
+      INPUT.value = termine;
+      PANNELLO_RECENTI.hidden = true;
+      ADD_RECENT_SEARCH(termine); // risale in cima all'elenco
+      DO_SEARCH(termine);
+    });
+
+    const BTN_RIMUOVI = creaElemento("button", "recent-chip-remove border-0 bg-transparent", CHIP, "×");
+    BTN_RIMUOVI.type = "button";
+    BTN_RIMUOVI.setAttribute("aria-label", `Rimuovi ${termine} dalle ricerche recenti`);
+    BTN_RIMUOVI.addEventListener("click", () => {
+      REMOVE_RECENT_SEARCH(termine);
+      RENDER_RECENTI(); // ridisegna (e nasconde il pannello se non resta nulla)
+    });
+  });
+
+  PANNELLO_RECENTI.hidden = false;
+};
+
+INPUT.addEventListener("focus", RENDER_RECENTI);
+INPUT.addEventListener("click", RENDER_RECENTI); // barra gia' a fuoco ma pannello chiuso (Esc, chip...)
+
+INPUT.addEventListener("blur", () => {
+  PANNELLO_RECENTI.hidden = true;
+  ADD_RECENT_SEARCH(INPUT.value);
+});
+
+INPUT.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    ADD_RECENT_SEARCH(INPUT.value);
+    PANNELLO_RECENTI.hidden = true;
+  }
+  if (event.key === "Escape") PANNELLO_RECENTI.hidden = true;
+});
+
+/* ============================ Input ============================ */
+
 const DEBOUNCED_SEARCH = DEBOUNCE(DO_SEARCH, 400);
 
 INPUT.addEventListener("input", (event) => {
+  PANNELLO_RECENTI.hidden = true; // mentre scrivi si vedono i risultati, non l'elenco
   DEBOUNCED_SEARCH(event.target.value);
 });
 
