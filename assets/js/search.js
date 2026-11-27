@@ -17,10 +17,10 @@ import {
   RENDER_SIDEBAR_FAVS,
   CERCA_INFO_ARTISTA,
   AGGIORNA_CARD_PLAY,
-  IS_FAV_ALBUM,      // ⭐ NUOVO — cuore sulle card album
-  TOGGLE_FAV_ALBUM,  // ⭐ NUOVO
-  IS_FAV_ARTIST,     // ⭐ NUOVO — cuore sulle card artista
-  TOGGLE_FAV_ARTIST, // ⭐ NUOVO
+  IS_FAV_ALBUM,      // cuore sulle card album
+  TOGGLE_FAV_ALBUM,  
+  IS_FAV_ARTIST,     // cuore sulle card artista
+  TOGGLE_FAV_ARTIST, 
 } from "./common.js";
 
 const PLAYER = INIT_PAGE("search");
@@ -50,7 +50,6 @@ const CREATE_IMAGE = (parent, url, alt = "") => {
   return IMAGE_WRAP;
 };
 
-// ⭐ NUOVO
 /*
   RENDI_CARD_LINK(card, indirizzo, etichetta)
   - Fa comportare una card <article> come un link: click -> apre "indirizzo".
@@ -79,7 +78,6 @@ const RENDI_CARD_LINK = (card, indirizzo, etichetta) => {
   });
 };
 
-// ⭐ NUOVO
 /*
   CREA_CUORE_CARD(genitore, nome, eGiaPreferito, alClick)
   - Cuore per le card di album e artisti (stesse classi del cuore dei brani).
@@ -225,27 +223,27 @@ GRID_TRACKS.addEventListener("click", (event) => {
 
 const RENDER_ALBUM_CARD = (rawAlbum) => {
   const ALBUM = new Album(rawAlbum);
-  // ⭐ MODIFICA — "article" invece di "a": dentro ci va il cuore (un <button>)
+  // "article" invece di "a": dentro ci va il cuore (un <button>)
   const CARD = CREATE_CARD(GRID_ALBUMS, "article");
 
-  // ⭐ MODIFICA — prima era CARD.href = ...: ora il click lo gestisce RENDI_CARD_LINK
+  // prima era CARD.href = ...: ora il click lo gestisce RENDI_CARD_LINK
   RENDI_CARD_LINK(CARD, `album.html?id=${ALBUM.id}`, `Apri l'album ${ALBUM.title}`);
 
   CREATE_IMAGE(CARD, BIG_ART(ALBUM.cover), ALBUM.title);
   creaElemento("p", "card-title fw-bold text-truncate mt-0 mb-1 fs-6", CARD, ALBUM.title);
   creaElemento("p", "card-sub text-body-secondary text-truncate m-0 small", CARD, ALBUM.artist);
 
-  // ⭐ NUOVO — cuore: stessa funzione del bottone "+ Salva album" della pagina album
+  // cuore: stessa funzione del bottone "+ Salva album" della pagina album
   CREA_CUORE_CARD(CARD, ALBUM.title, () => IS_FAV_ALBUM(ALBUM.id), () => TOGGLE_FAV_ALBUM(ALBUM));
 };
 
 const RENDER_ARTIST_CARD = (rawArtist) => {
   const ARTIST = new Artist(rawArtist);
-  // ⭐ MODIFICA — "article" invece di "a": dentro ci va il cuore (un <button>)
+  // "article" invece di "a": dentro ci va il cuore (un <button>)
   const CARD = CREATE_CARD(GRID_ARTISTS, "article");
   const IMAGE_WRAP = creaElemento("div", "card-image-wrap position-relative w-100 overflow-hidden round", CARD);
 
-  // ⭐ MODIFICA — prima era CARD.href = ...: ora il click lo gestisce RENDI_CARD_LINK
+  // prima era CARD.href = ...: ora il click lo gestisce RENDI_CARD_LINK
   RENDI_CARD_LINK(CARD, `artist.html?id=${ARTIST.id}`, `Apri l'artista ${ARTIST.name}`);
 
   // Il 🎤 resta come segnaposto finche' non arriva la foto
@@ -258,7 +256,7 @@ const RENDER_ARTIST_CARD = (rawArtist) => {
   creaElemento("p", "card-title fw-bold text-truncate mt-0 mb-1 fs-6", CARD, ARTIST.name);
   creaElemento("p", "card-sub text-body-secondary text-truncate m-0 small", CARD, ARTIST.genre || "Artista");
 
-  // ⭐ NUOVO — cuore: stessa funzione del bottone "Segui" della pagina artista.
+  // cuore: stessa funzione del bottone "Segui" della pagina artista.
   // Sta sulla CARD (non nel cerchio): la foto, quando arriva, sostituisce il contenuto del cerchio.
   CREA_CUORE_CARD(CARD, ARTIST.name, () => IS_FAV_ARTIST(ARTIST.id), () => TOGGLE_FAV_ARTIST(ARTIST));
 

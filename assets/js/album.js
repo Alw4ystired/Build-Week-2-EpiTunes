@@ -11,9 +11,9 @@ import {
   IS_FAVOURITE,
   RENDER_SIDEBAR_FAVS,
   API_BASE,
-  IS_FAV_ALBUM,     // ⭐ NUOVO — l'album e' gia' salvato?
-  TOGGLE_FAV_ALBUM, // ⭐ NUOVO — salva / togli l'album
-  CREA_PLAY_E_MISCHIA, // ⭐ NUOVO — bottoni ▶ e ⇄ dell'hero
+  IS_FAV_ALBUM,     // l'album e' gia' salvato?
+  TOGGLE_FAV_ALBUM, // salva / togli l'album
+  CREA_PLAY_E_MISCHIA, // bottoni ▶ e ⇄ dell'hero
 } from "./common.js";
 
 /* ============================================================
@@ -121,7 +121,6 @@ const CREA_BOTTONE_CUORE = (track, genitore, classi) => {
   return BOTTONE;
 };
 
-// ⭐ NUOVO
 /*
   CREA_LINK_TESTO(track, genitore)
   - Bottoncino "Testo" che apre la pagina del brano (track.html) con il testo scorrevole.
@@ -188,12 +187,12 @@ const RENDER_HERO = (album, tracks) => {
 
   /* ---------- Bottoni Play + Salva album ---------- */
   const AZIONI = creaElemento("div", "hero-actions d-flex align-items-center gap-3", META);
-  // ⭐ MODIFICA — ▶ e ⇄ ora li crea CREA_PLAY_E_MISCHIA (common.js),
+  //  ▶ e ⇄ li crea CREA_PLAY_E_MISCHIA (common.js),
   // la stessa funzione usata dalla pagina artista
   CREA_PLAY_E_MISCHIA(AZIONI, tracks, album.title);
 
-  // ⭐ MODIFICA — tolto il cuore della prima traccia (bastano i cuori delle righe).
-  // ⭐ NUOVO — "+ Salva album": aggiunge o toglie l'album dagli "Album preferiti".
+  // Tolto il cuore della prima traccia (bastano i cuori delle righe).
+  // "+ Salva album": aggiunge o toglie l'album dagli "Album preferiti".
   const BOTTONE_SALVA = creaElemento("button", "btn btn-outline-light btn-sm rounded-pill px-3", AZIONI);
   BOTTONE_SALVA.type = "button";
 
@@ -235,7 +234,7 @@ const RENDER_TRACKLIST = (tracks) => {
     creaElemento("span", "track-num text-center text-body-secondary", RIGA, indice + 1); // indice parte da 0, il numero da 1
     creaElemento("span", "track-title fw-semibold text-truncate", RIGA, track.title ?? "Brano sconosciuto");
     creaElemento("span", "track-time text-end text-body-secondary", RIGA, FORMAT_TIME(track.durationMs)); // ms -> "m:ss"
-    // ⭐ MODIFICA — "Testo" e cuore insieme nell'ultima colonna della griglia
+    // "Testo" e cuore insieme nell'ultima colonna della griglia
     const AZIONI_RIGA = creaElemento("div", "d-flex align-items-center justify-content-end gap-2", RIGA);
     CREA_LINK_TESTO(track, AZIONI_RIGA);
     CREA_BOTTONE_CUORE(track, AZIONI_RIGA, "track-fav border-0 bg-transparent");
