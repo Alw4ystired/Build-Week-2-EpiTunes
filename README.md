@@ -173,7 +173,7 @@ Le attività sono distribuite per giorno sulla bacheca del gruppo, dove vengono 
 - [x] Adattamento mobile-first dei breakpoint
 - [x] Grafica portata sulle classi di Bootstrap e `app.css` riscritto per zone
 - [x] Tempo totale del player preso dalla durata vera dell'anteprima
-- [x] Home: suggerimenti a 12 card
+- [x] Home: suggerimenti a 6 card, una riga piena della griglia
 - [x] Event delegation sulle griglie: un ascoltatore per griglia invece di tre per card
 - [x] README con architettura, scelte tecniche e stato
 
