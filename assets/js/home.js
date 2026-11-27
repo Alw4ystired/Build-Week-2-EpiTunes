@@ -7,13 +7,13 @@ import {
   GET_HISTORY,
   RENDER_SIDEBAR_FAVS,
   AGGIORNA_CARD_PLAY,
-  GET_FAV_ALBUMS,     // ⭐ NUOVO — filtro "Album" dei preferiti
-  IS_FAV_ALBUM,       // ⭐ NUOVO — cuore sulle card album
-  TOGGLE_FAV_ALBUM,   // ⭐ NUOVO
-  GET_FAV_ARTISTS,    // ⭐ NUOVO — filtro "Artisti" dei preferiti
-  IS_FAV_ARTIST,      // ⭐ NUOVO — cuore sulle card artista
-  TOGGLE_FAV_ARTIST,  // ⭐ NUOVO
-  CERCA_INFO_ARTISTA, // ⭐ NUOVO — foto degli artisti (come nella ricerca)
+  GET_FAV_ALBUMS,     // filtro "Album" dei preferiti
+  IS_FAV_ALBUM,       // cuore sulle card album
+  TOGGLE_FAV_ALBUM,   
+  GET_FAV_ARTISTS,    // filtro "Artisti" dei preferiti
+  IS_FAV_ARTIST,      // cuore sulle card artista
+  TOGGLE_FAV_ARTIST,  
+  CERCA_INFO_ARTISTA, // foto degli artisti (come nella ricerca)
 
   creaElemento,
   FETCH_JSON,
@@ -77,12 +77,12 @@ const TESTATA_SEZIONE = (parent, titolo, nota) => {
 
 // Griglia Bootstrap: 2 card per riga su telefono, 3-4 su tablet, 5-6 su portatile, 8 su schermi grandi.
 // Le colonne calano ma la copertina resta quadrata (aspect-ratio in app.css).
-// ⭐ MODIFICA — salvata in una costante: ora la usano anche le griglie di album e artisti preferiti
+// salvata in una costante: ora la usano anche le griglie di album e artisti preferiti
 const CLASSI_GRIGLIA = "row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 row-cols-xl-6 row-cols-xxl-8 g-2 g-md-3";
 
 /*
   CREA_GRIGLIA_TRACCE(parent, tracks)
-  ⭐ MODIFICA — e' la parte "griglia + card + event delegation" che prima stava
+  è la parte "griglia + card + event delegation" che prima stava
   dentro renderRow, IDENTICA, spostata in una funzione sua: cosi' la usano sia
   renderRow sia la sezione preferiti (filtro "Tracce").
   - una card per ogni track: cover, titolo, artista, bottone play, bottone cuore
@@ -177,7 +177,7 @@ const CREA_GRIGLIA_TRACCE = (parent, tracks) => {
   renderRow(rowTitle, tracks, idSezione, parent, nota)
   - crea una <section> con testata e una griglia di card
   - se l'array è vuoto non crea niente (nessuna sezione vuota con solo il titolo)
-  ⭐ MODIFICA — la griglia ora la crea CREA_GRIGLIA_TRACCE (stesso risultato di prima)
+  - la griglia ora la crea CREA_GRIGLIA_TRACCE (stesso risultato di prima)
 */
 const RENDER_ROW = (rowTitle, tracks, idSezione, parent = RIGHE_SUGGERITE, nota) => {
   if (!tracks || tracks.length === 0) return;
@@ -194,7 +194,7 @@ const RENDER_ROW = (rowTitle, tracks, idSezione, parent = RIGHE_SUGGERITE, nota)
 
 /* ============================ Card di album e artisti ============================ */
 
-// ⭐ NUOVO
+
 /*
   RENDI_CARD_LINK(card, indirizzo, etichetta)
   - Fa comportare una card <article> come un link (stessa funzione di search.js):
@@ -220,7 +220,7 @@ const RENDI_CARD_LINK = (card, indirizzo, etichetta) => {
   });
 };
 
-// ⭐ NUOVO
+
 /*
   CREA_CUORE_CARD(genitore, nome, eGiaPreferito, alClick)
   - Cuore per le card di album e artisti (stesse classi del cuore delle tracce).
@@ -253,7 +253,7 @@ const CREA_CUORE_CARD = (genitore, nome, eGiaPreferito, alClick) => {
   });
 };
 
-// ⭐ NUOVO
+
 /*
   CARICA_FOTO_ARTISTA(imageWrap, nome)
   - Come in search.js: chiede la foto a TheAudioDB e, quando e' caricata del
@@ -271,7 +271,7 @@ const CARICA_FOTO_ARTISTA = async (imageWrap, nome) => {
   IMAGE.src = `${FOTO}/medium`;
 };
 
-// ⭐ NUOVO
+
 /*
   CREA_CARD_ALBUM(album, grid)
   - Card di un album, con lo stile delle card della home (cuore dentro la copertina).
@@ -294,7 +294,7 @@ const CREA_CARD_ALBUM = (album, grid) => {
   CREA_CUORE_CARD(IMAGE_WRAP, album.title, () => IS_FAV_ALBUM(album.id), () => TOGGLE_FAV_ALBUM(album));
 };
 
-// ⭐ NUOVO
+
 /*
   CREA_CARD_ARTISTA(artist, grid)
   - Card di un artista: cerchio con 🎤 (poi la foto di TheAudioDB), nome, genere.
@@ -318,10 +318,10 @@ const CREA_CARD_ARTISTA = (artist, grid) => {
 
 /* ============================ I tuoi preferiti (con filtri) ============================ */
 
-// ⭐ NUOVO — quale filtro e' attivo. let perche' cambia ai click. Si parte da "tracce".
+// Il filtro inizialmente parte da Tracce. let perche' cambia ai click.
 let filtroPreferiti = "tracce";
 
-// ⭐ NUOVO — i tre bottoni filtro: chiave, testo del bottone, messaggio se vuoto,
+// I tre bottoni filtro: chiave, testo del bottone, messaggio se vuoto,
 // nota a destra del titolo (prima c'era solo "n brani salvati")
 const FILTRI_PREFERITI = [
   { chiave: "tracce", etichetta: "Tracce", vuoto: "Nessun brano tra i preferiti", nota: (n) => (n === 1 ? "1 brano salvato" : `${n} brani salvati`) },
@@ -331,7 +331,7 @@ const FILTRI_PREFERITI = [
 
 /*
   AGGIORNA_PREFERITI()
-  ⭐ MODIFICA — stesso nome di prima (la chiamano gia' i cuori), ma ora disegna
+  Stesso nome di prima (la chiamano gia' i cuori), ma ora disegna
   la sezione con i tre filtri:
       [I tuoi preferiti] [Tracce] [Album] [Artisti]            n brani salvati
       griglia del filtro attivo

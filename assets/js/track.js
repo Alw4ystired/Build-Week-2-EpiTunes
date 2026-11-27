@@ -41,13 +41,11 @@ let caricamentoAttuale = 0;
 
 /* ============================ TESTO (LYRICS) ============================ */
 
-// ⭐ NUOVO — LRCLIB: database gratuito di testi, anche sincronizzati.
+// LRCLIB: database gratuito di testi, anche sincronizzati.
 // Non serve nessuna chiave e funziona direttamente dal browser (CORS abilitato).
 // Limite: circa 45 richieste al minuto, a noi ne serve 1-2 per pagina.
 const LRCLIB_BASE = "https://lrclib.net/api";
 
-// ⭐ MODIFICA — prima metteva il tempo davanti a ogni riga ("0:17  testo"),
-// ora lo TOGLIE: restano solo le frasi, una per riga.
 /*
   FORMATTA_SINCRONIZZATO(lrc)
   - LRCLIB da' il testo sincronizzato in formato LRC:
@@ -83,7 +81,7 @@ const FORMATTA_SINCRONIZZATO = (lrc) => {
   return RIGHE_PULITE.filter(Boolean).join("\n");
 };
 
-// ⭐ NUOVO
+
 /*
   ESTRAI_TESTO(dati)
   - Da un risultato di LRCLIB tira fuori il testo da mostrare, in quest'ordine:
@@ -100,7 +98,7 @@ const ESTRAI_TESTO = (dati) => {
   return null;
 };
 
-// ⭐ MODIFICA — prima restituiva sempre null, ora cerca davvero il testo su LRCLIB.
+// cerca il testo su LRCLIB.
 // Aggiunti due parametri (album, durataMs): aiutano LRCLIB a trovare la versione giusta.
 /*
   CERCA_TESTO(titolo, artista, album, durataMs)
@@ -274,7 +272,6 @@ const RENDER_HERO = (track, raw) => {
   });
 };
 
-// ⭐ NUOVO
 /*
   CENTRA_RIGA(box, riga)
   - Fa scorrere il riquadro del testo finche' la riga cliccata e' al centro.
@@ -291,7 +288,7 @@ const CENTRA_RIGA = (box, riga) => {
   });
 };
 
-// ⭐ MODIFICA — prima il testo era un unico paragrafo; ora e' un riquadro con
+// Prima il testo era un unico paragrafo; ora e' un riquadro con
 // scorrimento, righe grandi e la riga centrale "accesa" come su Spotify.
 /*
   renderTesto(testo)
@@ -311,7 +308,7 @@ const RENDER_TESTO = (testo) => {
   // Colonne Bootstrap: il riquadro resta al centro e largo circa come il rettangolo rosso
   const RIGA = creaElemento("div", "row justify-content-center", TRACK_LYRICS);
   const COLONNA = creaElemento("div", "col-12 col-md-8 col-lg-6 text-center", RIGA);
-  creaElemento("h2", "fs-4 fw-bold mb-2", COLONNA, "Testo"); // ⭐ mb-2 (prima mb-3): un filo piu' compatto
+  creaElemento("h2", "fs-4 fw-bold mb-2", COLONNA, "Testo"); //  mb-2 (prima mb-3): un filo piu' compatto
 
   if (!testo) {
     creaElemento("p", "text-body-secondary", COLONNA, "Testo non ancora disponibile");

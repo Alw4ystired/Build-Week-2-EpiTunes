@@ -12,9 +12,9 @@ import {
   RENDER_SIDEBAR_FAVS,
   API_BASE,
   CERCA_INFO_ARTISTA, // per foto artista + follower
-  IS_FAV_ARTIST,      // ⭐ NUOVO — l'artista e' gia' seguito?
-  TOGGLE_FAV_ARTIST,  // ⭐ NUOVO — segui / smetti di seguire
-  CREA_PLAY_E_MISCHIA, // ⭐ NUOVO — bottoni ▶ e ⇄ dell'hero
+  IS_FAV_ARTIST,      // l'artista e' gia' seguito?
+  TOGGLE_FAV_ARTIST,  // segui / smetti di seguire
+  CREA_PLAY_E_MISCHIA, // bottoni ▶ e ⇄ dell'hero
 } from "./common.js";
 
 /* ============================================================
@@ -129,7 +129,6 @@ const CREA_BOTTONE_CUORE = (track, genitore, classi) => {
   return BOTTONE;
 };
 
-// ⭐ NUOVO — identica ad album.js
 /*
   CREA_LINK_TESTO(track, genitore)
   - Bottoncino "Testo" che apre la pagina del brano (track.html) con il testo scorrevole.
@@ -186,10 +185,10 @@ const RENDER_HERO = (artist, tracks) => {
 
   /* ---------- Bottoni ▶ e ⇄ ---------- */
   const AZIONI = creaElemento("div", "hero-actions d-flex align-items-center gap-3", META);
-  // ⭐ MODIFICA — ▶ e ⇄ li crea CREA_PLAY_E_MISCHIA (common.js), come nella pagina album
+  // ▶ e ⇄ li crea CREA_PLAY_E_MISCHIA (common.js), come nella pagina album
   CREA_PLAY_E_MISCHIA(AZIONI, tracks, artist.name);
 
-  // ⭐ NUOVO — "Segui": aggiunge o toglie l'artista dagli "Artisti preferiti".
+  // "Segui": aggiunge o toglie l'artista dagli "Artisti preferiti".
   const BOTTONE_SEGUI = creaElemento("button", "btn btn-outline-light btn-sm rounded-pill px-3", AZIONI);
   BOTTONE_SEGUI.type = "button";
 
@@ -239,7 +238,7 @@ const RENDER_TOP_TRACKS = (tracks) => {
     creaElemento("span", "track-num text-center text-body-secondary", RIGA, indice + 1); // posizione in classifica
     creaElemento("span", "track-title fw-semibold text-truncate", RIGA, track.title ?? "Brano sconosciuto");
     creaElemento("span", "track-time text-end text-body-secondary", RIGA, FORMAT_TIME(track.durationMs)); // ms -> "m:ss"
-    // ⭐ MODIFICA — "Testo" e cuore insieme nell'ultima colonna della griglia
+    // "Testo" e cuore insieme nell'ultima colonna della griglia
     const AZIONI_RIGA = creaElemento("div", "d-flex align-items-center justify-content-end gap-2", RIGA);
     CREA_LINK_TESTO(track, AZIONI_RIGA);
     CREA_BOTTONE_CUORE(track, AZIONI_RIGA, "track-fav border-0 bg-transparent");

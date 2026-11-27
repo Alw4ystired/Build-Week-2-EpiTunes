@@ -163,7 +163,7 @@ button {
     letter-spacing: 1.5px;
   }
 
-  /* ⭐ NUOVO — ogni lista dei preferiti (tracce, album, artisti) mostra al
+  /* Ogni lista dei preferiti (tracce, album, artisti) mostra al
      massimo 4 voci: dalla quinta in poi si scorre DENTRO la lista.
      Altezza di una voce: 20px di riga + 8px sopra + 8px sotto (py-2) = 36px.
      4 voci + 3 spazi da 4px tra loro (gap-1) = 4*36 + 3*4 = 156px. */
@@ -448,7 +448,7 @@ button {
 /* ============================ Tracklist ============================ */
 
 .track-row {
-  /* ⭐ MODIFICA — l'ultima colonna era 48px (solo il cuore); ora contiene
+  /* L'ultima colonna era 48px (solo il cuore); ora contiene
      anche il bottone "Testo": "auto" la fa larga quanto serve */
   grid-template-columns: 32px 1fr 80px auto;
   gap: 12px;

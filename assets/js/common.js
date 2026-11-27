@@ -65,8 +65,8 @@ const API_BASE = "https://itunes.apple.com";
 const AUDIODB_BASE = "https://www.theaudiodb.com/api/v1/json/123";
 const STORAGE_KEY_HISTORY = "epitunes_history";
 const STORAGE_KEY_FAVOURITES = "epitunes_favourites";
-const STORAGE_KEY_FAV_ALBUMS = "epitunes_fav_albums";   // ⭐ NUOVO — album salvati ("+ Salva album" / cuore)
-const STORAGE_KEY_FAV_ARTISTS = "epitunes_fav_artists"; // ⭐ NUOVO — artisti seguiti ("Segui" / cuore)
+const STORAGE_KEY_FAV_ALBUMS = "epitunes_fav_albums";   // album salvati ("+ Salva album" / cuore)
+const STORAGE_KEY_FAV_ARTISTS = "epitunes_fav_artists"; // artisti seguiti ("Segui" / cuore)
 const STORAGE_KEY_LAST_SEARCH = "epitunes_last_search";
 const STORAGE_KEY_PLAYER = "epitunes_player"; // brano in riproduzione + secondo a cui era arrivato
 const STORAGE_KEY_VOLUME = "epitunes_volume";
@@ -837,7 +837,6 @@ const TOGGLE_FAVOURITE = (track) => {
   );
 };
 
-// ⭐ NUOVO
 /*
   TOGGLE_IN_LISTA(chiave, elemento)
   - Stessa logica di TOGGLE_FAVOURITE, ma per qualsiasi lista salvata:
@@ -855,12 +854,12 @@ const TOGGLE_IN_LISTA = (chiave, elemento) => {
   );
 };
 
-// ⭐ NUOVO — Album preferiti (si salva l'intero oggetto Album: id, titolo, artista, cover...)
+// Album preferiti (si salva l'intero oggetto Album: id, titolo, artista, cover...)
 const GET_FAV_ALBUMS = () => READ_ARRAY(STORAGE_KEY_FAV_ALBUMS);
 const IS_FAV_ALBUM = (albumId) => GET_FAV_ALBUMS().some((a) => a.id === albumId);
 const TOGGLE_FAV_ALBUM = (album) => TOGGLE_IN_LISTA(STORAGE_KEY_FAV_ALBUMS, album);
 
-// ⭐ NUOVO — Artisti preferiti (si salva l'intero oggetto Artist: id, nome, genere)
+// Artisti preferiti (si salva l'intero oggetto Artist: id, nome, genere)
 const GET_FAV_ARTISTS = () => READ_ARRAY(STORAGE_KEY_FAV_ARTISTS);
 const IS_FAV_ARTIST = (artistId) => GET_FAV_ARTISTS().some((a) => a.id === artistId);
 const TOGGLE_FAV_ARTIST = (artist) => TOGGLE_IN_LISTA(STORAGE_KEY_FAV_ARTISTS, artist);
@@ -904,8 +903,7 @@ const RENDER_SIDEBAR = (activePage) => {
   });
 
   /* ---------- Preferiti: tre sezioni ---------- */
-  // ⭐ MODIFICA — prima c'era una sola sezione "I tuoi preferiti".
-  // Ora sono tre, con le stesse classi (stesso aspetto, stesse regole responsive).
+    // Tre sezioni preferiti, Tracce Album e Artisti, con le stesse classi (stesso aspetto, stesse regole responsive).
   // "sidebar-favs" resta l'id delle tracce: lo usano gia' AGGIORNA_SIDEBAR_PLAY e il resto del codice.
   const SEZIONI_PREFERITI = [
     { titolo: "Tracce preferite", idLista: "sidebar-favs" },
@@ -915,7 +913,7 @@ const RENDER_SIDEBAR = (activePage) => {
 
   SEZIONI_PREFERITI.forEach(({ titolo, idLista }) => {
     const TITOLO = creaElemento("p", "sidebar-section-title d-none d-lg-block text-uppercase text-body-secondary px-3 pt-3 pb-2 m-0", SIDEBAR, titolo);
-    // ⭐ NUOVO — <span> con il numero di elementi, es. " (3)".
+    // <span> con il numero di elementi, es. " (3)".
     // Id = id della lista + "-contatore": cosi' AGGIORNA_CONTATORE sa quale aggiornare.
     creaElemento("span", undefined, TITOLO, " (0)", `${idLista}-contatore`);
     creaElemento("ul", "sidebar-list d-none d-lg-flex flex-column gap-1 list-unstyled m-0 px-1", SIDEBAR, undefined, idLista);
@@ -953,7 +951,6 @@ const RENDER_NAV_MOBILE = (activePage) => {
   });
 };
 
-// ⭐ NUOVO
 /*
   AGGIORNA_CONTATORE(idLista, numero)
   - Scrive " (numero)" nello <span> accanto al titolo della sezione.
@@ -967,7 +964,7 @@ const AGGIORNA_CONTATORE = (idLista, numero) => {
 
 /*
   RENDER_TRACCE_PREFERITE()
-  ⭐ MODIFICA — e' la vecchia RENDER_SIDEBAR_FAVS, identica, solo rinominata
+  è la vecchia RENDER_SIDEBAR_FAVS, identica, solo rinominata
   (+ il contatore): riempie "Tracce preferite" con il bottone ▶ di lato.
 */
 const RENDER_TRACCE_PREFERITE = () => {
@@ -975,7 +972,7 @@ const RENDER_TRACCE_PREFERITE = () => {
   if (!LISTA) return;
 
   const PREFERITI = GET_FAVOURITES();
-  AGGIORNA_CONTATORE("sidebar-favs", PREFERITI.length); // ⭐ NUOVO — numero di tracce
+  AGGIORNA_CONTATORE("sidebar-favs", PREFERITI.length); // numero di tracce
   LISTA.replaceChildren();
 
   if (PREFERITI.length === 0) {
@@ -1004,7 +1001,6 @@ const RENDER_TRACCE_PREFERITE = () => {
   AGGIORNA_SIDEBAR_PLAY();
 };
 
-// ⭐ NUOVO
 /*
   RENDER_LISTA_LINK(idLista, elementi, testoVuoto, pagina, testoDi)
   - Riempie una lista della sidebar con dei LINK (album o artisti).
@@ -1034,8 +1030,7 @@ const RENDER_LISTA_LINK = (idLista, elementi, testoVuoto, pagina, testoDi) => {
 
 /*
   RENDER_SIDEBAR_FAVS()
-  ⭐ MODIFICA — prima riempiva solo i brani; ora aggiorna tutte e tre le liste.
-  Il nome resta uguale: le pagine che la chiamano gia' non vanno toccate.
+  Aggiorna tutte e tre le liste
 */
 const RENDER_SIDEBAR_FAVS = () => {
   RENDER_TRACCE_PREFERITE();
@@ -1068,7 +1063,6 @@ const AGGIORNA_CARD_PLAY = () => {
   });
 };
 
-// ⭐ NUOVO
 /*
   CREA_PLAY_E_MISCHIA(contenitore, tracks, nome)
   - Crea il grande ▶ e, alla sua destra, il ⇄ delle pagine album e artista.
@@ -1245,7 +1239,7 @@ const INIT_PAGE = (activePage) => {
   window.player = PLAYER;
   AGGIORNA_SIDEBAR_PLAY(); // ora window.player esiste: evidenzio il preferito in riproduzione
 
-  // ⭐ NUOVO — Tornando con ‹ › il browser rimette la pagina dalla sua memoria
+  // Tornando con ‹ › il browser rimette la pagina dalla sua memoria
   // (bfcache) SENZA rieseguire il JavaScript: cuori, "Salva album"/"Segui" e
   // sidebar mostrerebbero i dati VECCHI, e un click su un cuore "vecchio"
   // toglierebbe un preferito invece di aggiungerlo.
@@ -1287,16 +1281,16 @@ export {
   GET_RECENT_SEARCHES,
   ADD_RECENT_SEARCH,
   REMOVE_RECENT_SEARCH,
-  GET_FAV_ALBUMS,    // ⭐ NUOVO — home.js (filtro "Album")
-  IS_FAV_ALBUM,      // ⭐ NUOVO — album.js, search.js, home.js
-  TOGGLE_FAV_ALBUM,  // ⭐ NUOVO
-  GET_FAV_ARTISTS,   // ⭐ NUOVO — home.js (filtro "Artisti")
-  IS_FAV_ARTIST,     // ⭐ NUOVO — artist.js, search.js, home.js
-  TOGGLE_FAV_ARTIST, // ⭐ NUOVO
+  GET_FAV_ALBUMS,    // home.js (filtro "Album")
+  IS_FAV_ALBUM,      // album.js, search.js, home.js
+  TOGGLE_FAV_ALBUM,  
+  GET_FAV_ARTISTS,   //  home.js (filtro "Artisti")
+  IS_FAV_ARTIST,     //  artist.js, search.js, home.js
+  TOGGLE_FAV_ARTIST, 
   // Render
   RENDER_SIDEBAR_FAVS,
   AGGIORNA_CARD_PLAY,
-  CREA_PLAY_E_MISCHIA, // ⭐ NUOVO — album.js e artist.js
+  CREA_PLAY_E_MISCHIA, // album.js e artist.js
   // Inizializzazione
   INIT_PAGE,
 };
