@@ -326,6 +326,15 @@ class Player {
 
     // Ogni volta che l'audio parte o si ferma (da qualunque pulsante) aggiorno
     // le icone ▶/⏸ della sidebar e delle card
+    // L'API da' durationMs del brano INTERO, ma noi suoniamo un'anteprima di
+    // circa 30 secondi. Appena il file e' caricato il browser sa quanto dura
+    // davvero: sovrascrivo il tempo totale con quello.
+    this.audio.addEventListener("loadedmetadata", () => {
+      if (this.el.tempoTotale && Number.isFinite(this.audio.duration)) {
+        this.el.tempoTotale.textContent = FORMAT_TIME(this.audio.duration * 1000);
+      }
+    });
+
     this.audio.addEventListener("play", () => AGGIORNA_SIDEBAR_PLAY());
     this.audio.addEventListener("pause", () => AGGIORNA_SIDEBAR_PLAY());
   }

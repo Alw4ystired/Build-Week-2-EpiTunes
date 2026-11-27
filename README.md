@@ -172,15 +172,15 @@ Le attività sono distribuite per giorno sulla bacheca del gruppo, dove vengono 
 - [x] Pagina artista
 - [x] Adattamento mobile-first dei breakpoint
 - [x] Grafica portata sulle classi di Bootstrap e `app.css` riscritto per zone
+- [x] Tempo totale del player preso dalla durata vera dell'anteprima
+- [x] Home: suggerimenti a 6 card, una riga piena della griglia
+- [x] Event delegation sulle griglie: un ascoltatore per griglia invece di tre per card
 - [x] README con architettura, scelte tecniche e stato
 
 ### Da fare
 
 - [ ] **Bug — preferiti dalla pagina album**: il cuore grande dell'hero salva la **prima traccia**, non l'album. Serve decidere cosa significa "album preferito" e dove finisce
 - [ ] **Bug — nessun preferito per l'artista**: nella pagina artista il cuore c'è solo sulle righe della tracklist, non sull'artista stesso
-- [ ] **Tempo totale**: il player mostra la durata del brano intero, mentre l'anteprima dura 30 secondi
-- [ ] Home: suggerimenti a 12 card
-- [ ] Event delegation sulle griglie, al posto di un listener per ogni card
 - [ ] Pubblicazione su GitHub Pages
 
 ### Extra

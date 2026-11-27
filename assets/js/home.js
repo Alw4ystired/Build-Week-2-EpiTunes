@@ -123,20 +123,6 @@ const RENDER_ROW = (rowTitle, tracks, idSezione, parent = RIGHE_SUGGERITE, nota)
       `${GIA_PREFERITO ? "Rimuovi" : "Aggiungi"} ${track.title} ${GIA_PREFERITO ? "dai" : "ai"
       } preferiti`
     );
-    //clicco dei favoriti
-    FAV_BUTTON.addEventListener("click", (event) => {
-      event.stopPropagation();
-
-      // Aggiunge o rimuove il brano dai preferiti
-      TOGGLE_FAVOURITE(track);
-      const ORA = IS_FAVOURITE(track.id); // rileggo lo stato aggiornato
-      FAV_BUTTON.classList.toggle("is-fav", ORA);
-      FAV_BUTTON.textContent = ORA ? "♥" : "♡";
-      RENDER_SIDEBAR_FAVS(); // aggiorno anche la lista nella sidebar
-      AGGIORNA_CUORI(track);
-      AGGIORNA_PREFERITI();
-    });
-
     // Bottone play (compare al passaggio del mouse, vedi .card:hover in app.css)
     const PLAY_BUTTON = creaElemento("button", "card-play position-absolute rounded-circle border-0 d-flex align-items-center justify-content-center", IMAGE_WRAP, "▶");
     PLAY_BUTTON.type = "button";
@@ -146,22 +132,40 @@ const RENDER_ROW = (rowTitle, tracks, idSezione, parent = RIGHE_SUGGERITE, nota)
     );
     PLAY_BUTTON.disabled = !track.previewUrl;
 
-    PLAY_BUTTON.addEventListener("click", (event) => {
-      event.stopPropagation();
+  });
 
-      if (track.previewUrl) {
-        PLAYER.play(track, tracks); // la coda e' la riga da cui parto
-      }
-    });
+  /*
+    Event delegation.
+    Invece di tre ascoltatori su ogni card (cuore, play, card intera), ne
+    mettiamo UNO solo sulla griglia. Il click "sale" dal bottone alla card
+    alla griglia: closest() dice da dove e' partito, e il data-track-id
+    della card dice quale brano e'.
+    Con 12 card per riga: 1 ascoltatore invece di 36.
+  */
+  const PER_ID = new Map(tracks.map((brano) => [String(brano.id), brano]));
 
-    // Click sulla card per riprodurre
-    CARD.addEventListener("click", (event) => {
-      if (event.target.closest("button")) return;
+  GRID.addEventListener("click", (event) => {
+    const CARD = event.target.closest(".card");
+    if (!CARD) return; // click nel vuoto fra una card e l'altra
 
-      if (track.previewUrl) {
-        PLAYER.play(track, tracks); // la coda e' la riga da cui parto
-      }
-    });
+    const TRACK = PER_ID.get(CARD.dataset.trackId);
+    if (!TRACK) return;
+
+    // Cuore
+    if (event.target.closest(".card-fav")) {
+      TOGGLE_FAVOURITE(TRACK);
+      RENDER_SIDEBAR_FAVS(); // la lista nella sidebar
+      AGGIORNA_CUORI(TRACK); // tutti i cuori di questo brano, anche nelle altre righe
+      AGGIORNA_PREFERITI(); // la riga "I tuoi preferiti"
+      return;
+    }
+
+    // Un altro bottone che qualcuno aggiungesse in futuro non fa partire la musica
+    const BOTTONE = event.target.closest("button");
+    if (BOTTONE && !BOTTONE.classList.contains("card-play")) return;
+
+    // Bottone verde, oppure un punto qualsiasi della card
+    if (TRACK.previewUrl) PLAYER.play(TRACK, tracks); // la coda e' la riga da cui parto
   });
 
   AGGIORNA_CARD_PLAY(); // le card nuove partono con l'icona giusta (▶ o ⏸)
@@ -203,6 +207,13 @@ const AGGIORNA_CUORI = (track) => {
     } else {
       CUORE.textContent = "♡";
     }
+
+    // Anche l'etichetta per gli screen reader: senza questa resta quella di
+    // quando la card e' nata, e direbbe "Aggiungi" su un cuore gia' pieno.
+    CUORE.setAttribute(
+      "aria-label",
+      `${ORA ? "Rimuovi" : "Aggiungi"} ${track.title} ${ORA ? "dai" : "ai"} preferiti`
+    );
   });
 };
 
@@ -331,7 +342,7 @@ const CARICA_SUGGERIMENTI = async (termine) => {
     const DATI = await FETCH_JSON(URL);// fa la richiesta e trasforma la risposta in un oggetto JS
     const BRANI = DATI.results.map((raw) => new Track(raw));// da ogni risultato "grezzo" dell'API crea un oggetto Track, in un nuovo array
 
-    BRANI.sort(() => Math.random() - 0.5);//album radom
+    BRANI.sort(() => Math.random() - 0.5); // ordine diverso a ogni caricamento
     return BRANI.slice(0, 6); // 6 = una riga piena della griglia su desktop
 
   } catch (err) {
