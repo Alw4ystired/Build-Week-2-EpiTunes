@@ -31,7 +31,7 @@ La ricerca, che interroga l'API mentre si digita e divide i risultati in brani, 
 - **Cronologia** degli ultimi brani ascoltati, mostrata in home
 - **Pagina album** con copertina, dati dell'album e tracklist numerata
 - **Pagina artista** con foto, genere e brani più ascoltati
-- **Pagina brano**, raggiungibile cliccando la copertina in basso a sinistra nel player
+- **Pagina brano**, raggiungibile cliccando la copertina in basso a sinistra nel player, con il **testo della canzone**
 - **Frecce avanti e indietro** nella topbar, collegate alla cronologia del browser
 - **Ultima ricerca** ripristinata alla riapertura della pagina Cerca
 
@@ -43,7 +43,7 @@ Non serve nessuna build e nessuna installazione. Serve però un **server locale*
 
 In VS Code, estensione **Live Server** e poi "Open with Live Server" su `index.html`.
 
-Dipendenze esterne: Bootstrap 5.3.9 da CDN, l'iTunes Search API e TheAudioDB per le foto degli artisti. Nessuna chiave a pagamento: TheAudioDB usa quella gratuita di prova.
+Dipendenze esterne: Bootstrap 5.3.9 da CDN, l'iTunes Search API, TheAudioDB per le foto degli artisti e LRCLIB per i testi delle canzoni. Nessuna chiave a pagamento: TheAudioDB usa quella gratuita di prova, LRCLIB non ne vuole nessuna.
 
 ---
 
@@ -132,6 +132,7 @@ Nelle prime due viene salvato l'oggetto `Track` intero, non il solo id: così la
 - **Grafica sulle classi di Bootstrap.** Disposizione, spaziature, dimensioni del testo e comportamento responsive stanno nelle classi applicate a HTML e JavaScript. In `app.css` resta solo ciò che Bootstrap non ha: i colori della palette, le misure fuori scala, gli stati `:hover` e lo scheletro a griglia delle tre zone.
 - **Un foglio di stile per zone.** `app.css` è scritto con il nesting nativo del CSS: ogni macro sezione — sidebar, topbar, card, hero, tracklist, player — è un blocco unico con dentro i suoi pezzi. Le media query stanno tutte in fondo.
 - **Seconda API solo dove serve.** iTunes non restituisce le foto degli artisti: quelle arrivano da TheAudioDB, chiamato dalla pagina artista e dalle card artista della ricerca. La chiave gratuita regge 30 richieste al minuto, quindi le risposte restano in memoria finché si sta sulla pagina; se il limite viene superato le card ripiegano sull'icona del microfono e la pagina non si rompe.
+- **Terza API per i testi.** I testi arrivano da LRCLIB, che non chiede nessuna chiave. La pagina del brano prova prima la corrispondenza esatta su titolo e artista, e se non la trova ripiega su una ricerca; quando il testo non c'è, al suo posto resta un messaggio e il resto della pagina funziona lo stesso.
 
 ---
 
@@ -171,15 +172,15 @@ Le attività sono distribuite per giorno sulla bacheca del gruppo, dove vengono 
 - [x] Pagina artista
 - [x] Adattamento mobile-first dei breakpoint
 - [x] Grafica portata sulle classi di Bootstrap e `app.css` riscritto per zone
+- [x] Tempo totale del player preso dalla durata vera dell'anteprima
+- [x] Home: suggerimenti a 6 card, una riga piena della griglia
+- [x] Event delegation sulle griglie: un ascoltatore per griglia invece di tre per card
 - [x] README con architettura, scelte tecniche e stato
 
 ### Da fare
 
 - [ ] **Bug — preferiti dalla pagina album**: il cuore grande dell'hero salva la **prima traccia**, non l'album. Serve decidere cosa significa "album preferito" e dove finisce
 - [ ] **Bug — nessun preferito per l'artista**: nella pagina artista il cuore c'è solo sulle righe della tracklist, non sull'artista stesso
-- [ ] **Tempo totale**: il player mostra la durata del brano intero, mentre l'anteprima dura 30 secondi
-- [ ] Home: suggerimenti a 12 card
-- [ ] Event delegation sulle griglie, al posto di un listener per ogni card
 - [ ] Pubblicazione su GitHub Pages
 
 ### Extra
@@ -193,7 +194,7 @@ Cose che vanno oltre il minimo. Le spuntate sono già nel progetto, le altre son
 - [x] **Pagina del brano**: cliccando la copertina in basso a sinistra nel player si apre `track.html`, con copertina grande, album, anno, genere, durata e i comandi play e preferito
 - [x] **Riproduzione continua fra le pagine**: il brano e il secondo raggiunto vengono salvati uscendo dalla pagina e ripresi in quella dopo. Se il browser blocca la ripartenza automatica il player resta in pausa e basta un click
 - [x] **Navigazione da telefono**: sotto i 576px la sidebar sparisce, e Home e Cerca compaiono come icone nella topbar
+- [x] **Testi delle canzoni** da una terza API, LRCLIB: nella pagina del brano scorrono in un riquadro, con la riga al centro accesa e le altre smorzate
 - [ ] **Playlist**: pagina `playlist.html` con il suo `playlist.js`, per raccogliere i brani in elenchi creati dall'utente
-- [ ] **Testi dei brani** da una terza API: lo spazio nella pagina del brano c'è già e per ora mostra "Testo non ancora disponibile"
 - [ ] **Preferiti divisi per tipo**: sezioni separate per brani, album e artisti, invece di un unico elenco di brani
 - [ ] **Ricerche recenti** in un menu a tendina sulla casella di ricerca: oggi viene conservata solo l'ultima, e viene ripristinata all'apertura della pagina
