@@ -300,7 +300,7 @@ class Player {
       // ↻ acceso: lo stesso brano da capo
       if (this.ripeti && this.currentTrack) {
         this.audio.currentTime = 0;
-        this.audio.play().catch(() => {});
+        this.audio.play().catch(() => { });
         return;
       }
 
@@ -420,7 +420,7 @@ class Player {
               // inAttesa e' tornato false se l'utente ha gia' usato un pulsante play: non faccio niente
               if (this.inAttesa && this.audio.paused) {
                 this.isPlaying = true;
-                this.audio.play().catch(() => {});
+                this.audio.play().catch(() => { });
                 this.el.toggle.textContent = "⏸";
                 AGGIORNA_SIDEBAR_PLAY();
               }
