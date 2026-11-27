@@ -456,6 +456,8 @@ creaElemento("p", "text-body-secondary m-0", PRIMO_PIANO_CORPO, "Caricamento..."
     artista e un bottone che fa partire tutta la lista come coda ("mix").
   - Se la lista è vuota usa preferiti o cronologia; se non c'è niente, nasconde il pannello.
 */
+const MAX_SLIDE = 5; // quante slide al massimo nel carosello
+
 const RENDER_PRIMO_PIANO = (brani) => {
   let lista = brani.filter((t) => t.previewUrl);
   if (lista.length === 0) lista = GET_FAVOURITES();
@@ -468,30 +470,76 @@ const RENDER_PRIMO_PIANO = (brani) => {
     return;
   }
 
-  const BRANO = lista[0];
+  // Il corpo del pannello centra il carosello in orizzontale e in verticale
+  PRIMO_PIANO_CORPO.className = "d-flex align-items-center justify-content-center";
 
-  const ARTE = creaElemento("div", "feature-art rounded-3 overflow-hidden flex-shrink-0 bg-body-secondary", PRIMO_PIANO_CORPO);
-  const IMG = creaElemento("img", "w-100 h-100 object-fit-cover d-block", ARTE);
-  IMG.src = BIG_ART(BRANO.cover);
-  IMG.alt = "";
-  // alcune copertine vecchie di iTunes non esistono piu': resta il riquadro scuro
-  IMG.addEventListener("error", () => IMG.remove());
+  const SLIDES = lista.slice(0, MAX_SLIDE);
+  const ID = "carosello-primo-piano";
 
-  const META = creaElemento("div", "overflow-hidden", PRIMO_PIANO_CORPO);
-  const TITOLO = creaElemento("h3", "fs-5 fw-bold text-truncate mb-1", META);
-  const LINK = creaElemento("a", undefined, TITOLO, BRANO.title);
-  LINK.href = `track.html?id=${BRANO.id}`; // il titolo porta alla pagina del brano
+  const CAROSELLO = creaElemento("div", "carousel slide w-100", PRIMO_PIANO_CORPO);
+  CAROSELLO.id = ID;
 
-  let info = BRANO.artist;
-  if (lista.length > 1) {
-    info = `${BRANO.artist} · ${lista.length} brani nel mix`;
+  // Pallini
+  if (SLIDES.length > 1) {
+    const INDICATORI = creaElemento("div", "carousel-indicators mb-0", CAROSELLO);
+    SLIDES.forEach((_, i) => {
+      const PALLINO = creaElemento("button", i === 0 ? "active" : undefined, INDICATORI);
+      PALLINO.type = "button";
+      PALLINO.dataset.bsTarget = `#${ID}`;
+      PALLINO.dataset.bsSlideTo = String(i);
+      PALLINO.setAttribute("aria-label", `Slide ${i + 1}`);
+      if (i === 0) PALLINO.setAttribute("aria-current", "true");
+    });
   }
-  creaElemento("p", "small text-body-secondary text-truncate m-0", META, info);
 
-  const BOTTONE = creaElemento("button", "btn btn-accent btn-sm rounded-pill fw-bold px-3 mt-3", META, "▶ Riproduci mix");
-  BOTTONE.type = "button";
-  BOTTONE.disabled = !BRANO.previewUrl;
-  BOTTONE.addEventListener("click", () => PLAYER.play(BRANO, lista));
+  // Slide
+  const INNER = creaElemento("div", "carousel-inner", CAROSELLO);
+
+  SLIDES.forEach((BRANO, i) => {
+    const ITEM = creaElemento("div", i === 0 ? "carousel-item active" : "carousel-item", INNER);
+    const CONTENUTO = creaElemento("div", "d-flex flex-column align-items-center text-center px-5 pb-4", ITEM);
+
+    // Copertina
+    const ARTE = creaElemento("div", "feature-art-lg rounded-4 overflow-hidden flex-shrink-0 bg-body-secondary mb-3", CONTENUTO);
+    const IMG = creaElemento("img", "w-100 h-100 object-fit-cover d-block", ARTE);
+    IMG.src = BIG_ART(BRANO.cover);
+    IMG.alt = `Copertina di ${BRANO.title}`;
+    // alcune copertine vecchie di iTunes non esistono piu': resta il riquadro scuro
+    IMG.addEventListener("error", () => IMG.remove());
+
+    // Etichetta
+    creaElemento("p", "eyebrow text-uppercase fw-semibold small mb-1", CONTENUTO, `In evidenza · ${i + 1}/${SLIDES.length}`);
+
+    // Titolo (porta alla pagina del brano)
+    const TITOLO = creaElemento("h3", "fs-4 fw-bold text-truncate w-100 mb-1", CONTENUTO);
+    const LINK = creaElemento("a", "text-reset text-decoration-none", TITOLO, BRANO.title);
+    LINK.href = `track.html?id=${BRANO.id}`;
+
+    // Artista + dimensione del mix
+    let info = BRANO.artist;
+    if (lista.length > 1) info = `${BRANO.artist} · ${lista.length} brani nel mix`;
+    creaElemento("p", "text-body-secondary text-truncate w-100 small mb-3", CONTENUTO, info);
+
+    // Bottone
+    const BOTTONE = creaElemento("button", "btn btn-accent rounded-pill fw-bold px-4", CONTENUTO, "▶ Riproduci mix");
+    BOTTONE.type = "button";
+    BOTTONE.disabled = !BRANO.previewUrl;
+    BOTTONE.addEventListener("click", () => PLAYER.play(BRANO, lista));
+  });
+
+  // Frecce
+  if (SLIDES.length > 1) {
+    [["prev", "Precedente"], ["next", "Successivo"]].forEach(([dir, label]) => {
+      const FRECCIA = creaElemento("button", `carousel-control-${dir}`, CAROSELLO);
+      FRECCIA.type = "button";
+      FRECCIA.dataset.bsTarget = `#${ID}`;
+      FRECCIA.dataset.bsSlide = dir;
+      creaElemento("span", `carousel-control-${dir}-icon`, FRECCIA).setAttribute("aria-hidden", "true");
+      creaElemento("span", "visually-hidden", FRECCIA, label);
+    });
+  }
+
+  new bootstrap.Carousel(CAROSELLO, { interval: 4000, ride: "carousel", pause: "hover" });
 };
 
 /* ---------- In riproduzione (la coda del player) ---------- */
