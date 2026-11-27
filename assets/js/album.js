@@ -13,6 +13,7 @@ import {
   API_BASE,
   IS_FAV_ALBUM,     // ⭐ NUOVO — l'album e' gia' salvato?
   TOGGLE_FAV_ALBUM, // ⭐ NUOVO — salva / togli l'album
+  CREA_PLAY_E_MISCHIA, // ⭐ NUOVO — bottoni ▶ e ⇄ dell'hero
 } from "./common.js";
 
 /* ============================================================
@@ -187,15 +188,9 @@ const RENDER_HERO = (album, tracks) => {
 
   /* ---------- Bottoni Play + Salva album ---------- */
   const AZIONI = creaElemento("div", "hero-actions d-flex align-items-center gap-3", META);
-  const PRIMA_TRACCIA = tracks[0];
-
-  const BOTTONE_PLAY = creaElemento("button", "btn-play-big rounded-circle border-0", AZIONI, "▶");
-  BOTTONE_PLAY.type = "button";
-  BOTTONE_PLAY.setAttribute("aria-label", `Riproduci ${album.title}`);
-  BOTTONE_PLAY.disabled = !PRIMA_TRACCIA.previewUrl; // niente anteprima = bottone spento
-  // player.play (common.js) avvia l'audio, aggiorna il footer, salva in history
-  // e colora di verde la riga .track-row con lo stesso data-track-id
-  BOTTONE_PLAY.addEventListener("click", () => PLAYER.play(PRIMA_TRACCIA, tracks));
+  // ⭐ MODIFICA — ▶ e ⇄ ora li crea CREA_PLAY_E_MISCHIA (common.js),
+  // la stessa funzione usata dalla pagina artista
+  CREA_PLAY_E_MISCHIA(AZIONI, tracks, album.title);
 
   // ⭐ MODIFICA — tolto il cuore della prima traccia (bastano i cuori delle righe).
   // ⭐ NUOVO — "+ Salva album": aggiunge o toglie l'album dagli "Album preferiti".
