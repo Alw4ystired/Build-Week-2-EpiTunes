@@ -32,18 +32,111 @@ const TRACK_LYRICS = document.querySelector("#track-lyrics");
 
 /* ============================ TESTO (LYRICS) ============================ */
 
+/* ============================ TESTO (LYRICS) ============================ */
+
+// ⭐ NUOVO — LRCLIB: database gratuito di testi, anche sincronizzati.
+// Non serve nessuna chiave e funziona direttamente dal browser (CORS abilitato).
+// Limite: circa 45 richieste al minuto, a noi ne serve 1-2 per pagina.
+const LRCLIB_BASE = "https://lrclib.net/api";
+
+// ⭐ MODIFICA — prima metteva il tempo davanti a ogni riga ("0:17  testo"),
+// ora lo TOGLIE: restano solo le frasi, una per riga.
 /*
-  CERCA_TESTO(titolo, artista)
-  - QUI VA COLLEGATA LA API DEI TESTI (la sta cercando il collega).
-  - Regola da rispettare: restituire una STRINGA con il testo,
-    oppure null se il testo non si trova.
-  - Il resto della pagina non va toccato: basta cambiare questa funzione.
-  - Esempio di come potrebbe diventare:
-      const DATI = await FETCH_JSON(`https://URL_API/${encodeURIComponent(artista)}/${encodeURIComponent(titolo)}`);
-      return DATI.lyrics ?? null;
+  FORMATTA_SINCRONIZZATO(lrc)
+  - LRCLIB da' il testo sincronizzato in formato LRC:
+        [00:17.12] Prima riga
+        [00:21.40] Seconda riga
+        [00:25.03]                 <- riga vuota = pausa strumentale
+  - Tolgo la parte [mm:ss.xx] e tengo solo il testo:
+        Prima riga
+        Seconda riga
+        ♪
+  - Restituisce una STRINGA con le righe separate da "\n":
+    RENDER_TESTO poi la divide e crea una riga animata per ogni frase.
 */
-const CERCA_TESTO = async (titolo, artista) => {
+const FORMATTA_SINCRONIZZATO = (lrc) => {
+  const RIGHE = lrc.split("\n"); // divido il testo in un array di righe
+
+  const RIGHE_PULITE = RIGHE.map((riga) => {
+    if (!riga.startsWith("[")) return riga.trim(); // riga senza tempo: la lascio com'e'
+
+    const FINE = riga.indexOf("]");            // dove si chiude la parentesi del tempo
+    const TEMPO = riga.slice(1, FINE);         // "[00:17.12] ciao" -> "00:17.12"
+    const TESTO = riga.slice(FINE + 1).trim(); // "[00:17.12] ciao" -> "ciao"
+
+    // Tag che non sono tempi (es. [ar:Artista] in alcuni file LRC): li salto.
+    // Un tempo vero ha i minuti come numero prima dei due punti.
+    const MINUTI = Number(TEMPO.split(":")[0]);
+    if (Number.isNaN(MINUTI)) return "";
+
+    return TESTO || "♪"; // riga vuota = pausa musicale: metto una nota
+  });
+
+  // filter(Boolean) toglie le righe vuote (""), join("\n") le riunisce con l'a capo
+  return RIGHE_PULITE.filter(Boolean).join("\n");
+};
+
+// ⭐ NUOVO
+/*
+  ESTRAI_TESTO(dati)
+  - Da un risultato di LRCLIB tira fuori il testo da mostrare, in quest'ordine:
+      1) testo sincronizzato (syncedLyrics) -> formattato con i tempi
+      2) testo semplice (plainLyrics)
+      3) brano strumentale (instrumental: true) -> messaggio apposito
+  - Restituisce null se in quel risultato non c'e' niente di utile.
+  - ?. perche' dati potrebbe essere undefined (es. ricerca senza risultati).
+*/
+const ESTRAI_TESTO = (dati) => {
+  if (dati?.syncedLyrics) return FORMATTA_SINCRONIZZATO(dati.syncedLyrics);
+  if (dati?.plainLyrics) return dati.plainLyrics;
+  if (dati?.instrumental) return "♪ Brano strumentale ♪";
   return null;
+};
+
+// ⭐ MODIFICA — prima restituiva sempre null, ora cerca davvero il testo su LRCLIB.
+// Aggiunti due parametri (album, durataMs): aiutano LRCLIB a trovare la versione giusta.
+/*
+  CERCA_TESTO(titolo, artista, album, durataMs)
+  - Restituisce una STRINGA con il testo, oppure null (regola decisa dal collega:
+    RENDER_TESTO non va toccato).
+  - TENTATIVO 1: /api/get -> la corrispondenza esatta. Gli passo anche album e
+    durata in secondi: LRCLIB accetta il risultato solo se la durata coincide
+    (al massimo ±2 secondi), cosi' non prende per esempio una versione live.
+  - TENTATIVO 2: se il primo non trova niente (404 "TrackNotFound", che
+    FETCH_JSON trasforma in { results: [] }), uso /api/search con solo titolo
+    e artista, e prendo il primo risultato che ha un testo.
+    Serve perche' a volte la durata di iTunes e quella di LRCLIB non coincidono.
+  - NOTA: quando LRCLIB non trova il brano, FETCH_JSON scrive un errore 404
+    in console. E' normale: significa solo "testo non trovato".
+*/
+const CERCA_TESTO = async (titolo, artista, album, durataMs) => {
+  if (!titolo || !artista) return null;
+
+  // URLSearchParams costruisce la parte ?chiave=valore&... e codifica
+  // da solo spazi e caratteri speciali (come encodeURIComponent)
+  const PARAMETRI = new URLSearchParams({
+    track_name: titolo,
+    artist_name: artista,
+  });
+  if (album) PARAMETRI.set("album_name", album);
+  if (durataMs) PARAMETRI.set("duration", String(Math.round(durataMs / 1000))); // ms -> secondi
+
+  // TENTATIVO 1: corrispondenza esatta
+  const ESATTO = await FETCH_JSON(`${LRCLIB_BASE}/get?${PARAMETRI}`);
+  const TESTO_ESATTO = ESTRAI_TESTO(ESATTO);
+  if (TESTO_ESATTO) return TESTO_ESATTO;
+
+  // TENTATIVO 2: ricerca piu' larga (solo titolo + artista)
+  const RICERCA = await FETCH_JSON(
+    `${LRCLIB_BASE}/search?${new URLSearchParams({ track_name: titolo, artist_name: artista })}`
+  );
+  // /api/search restituisce un ARRAY; se c'e' stato un errore FETCH_JSON
+  // restituisce invece { results: [] }: Array.isArray distingue i due casi
+  if (!Array.isArray(RICERCA)) return null;
+
+  // find: il primo risultato da cui ESTRAI_TESTO riesce a tirare fuori qualcosa
+  const TROVATO = RICERCA.find((risultato) => ESTRAI_TESTO(risultato));
+  return ESTRAI_TESTO(TROVATO); // null se non c'e' nessun risultato utile
 };
 
 /* ============================ HELPER ============================ */
@@ -108,7 +201,8 @@ const RENDER_HERO = (track, raw) => {
   creaElemento("p", "hero-sub text-body-secondary m-0 fs-6", META, `${anno} · ${genere} · ${FORMAT_TIME(track.durationMs)}`);
 
   /* ---------- Bottoni Play + Cuore (stessi di album.js) ---------- */
-  const AZIONI = creaElemento("div", "hero-actions d-flex align-items-center justify-content-center gap-3", META);
+
+  const AZIONI = creaElemento("div", "hero-actions d-flex align-items-center justify-content-center gap-3 pb-0", META)
 
   const BOTTONE_PLAY = creaElemento("button", "btn-play-big rounded-circle border-0 fs-6", AZIONI, "▶");
   BOTTONE_PLAY.type = "button";
@@ -165,24 +259,99 @@ const RENDER_HERO = (track, raw) => {
   });
 };
 
+// ⭐ NUOVO
+/*
+  CENTRA_RIGA(box, riga)
+  - Fa scorrere il riquadro del testo finche' la riga cliccata e' al centro.
+  - offsetTop = distanza della riga dall'inizio del riquadro (funziona perche'
+    il riquadro ha position-relative). Tolgo meta' altezza del riquadro e
+    aggiungo meta' altezza della riga: cosi' il CENTRO della riga va al CENTRO del riquadro.
+  - Uso box.scrollTo e non riga.scrollIntoView: scrollIntoView farebbe
+    scorrere anche tutta la pagina, non solo il riquadro.
+*/
+const CENTRA_RIGA = (box, riga) => {
+  box.scrollTo({
+    top: riga.offsetTop - box.clientHeight / 2 + riga.offsetHeight / 2,
+    behavior: "smooth",
+  });
+};
+
+// ⭐ MODIFICA — prima il testo era un unico paragrafo; ora e' un riquadro con
+// scorrimento, righe grandi e la riga centrale "accesa" come su Spotify.
 /*
   renderTesto(testo)
-  - testo: stringa col testo, oppure null se non c'e'.
-  - Colonne Bootstrap: il testo resta al centro e non troppo largo.
+  - testo: stringa con il testo (righe separate da "\n"), oppure null.
+  - Struttura:
+      <h2>Testo</h2>
+      <div class="lyrics-box">          <- riquadro che scorre (stile in app.css)
+        <p class="lyrics-line">...</p>  <- una per frase
+        <p class="lyrics-line is-active">...</p>  <- quella al centro
+      </div>
+  - Non e' sincronizzato con la musica: la riga accesa e' quella che sta
+    al CENTRO del riquadro, e cambia mentre scorri con la rotellina.
 */
 const RENDER_TESTO = (testo) => {
   TRACK_LYRICS.replaceChildren();
 
+  // Colonne Bootstrap: il riquadro resta al centro e largo circa come il rettangolo rosso
   const RIGA = creaElemento("div", "row justify-content-center", TRACK_LYRICS);
   const COLONNA = creaElemento("div", "col-12 col-md-8 col-lg-6 text-center", RIGA);
-  creaElemento("h2", "fs-4 fw-bold mb-3", COLONNA, "Testo");
+  creaElemento("h2", "fs-4 fw-bold mb-2", COLONNA, "Testo"); // ⭐ mb-2 (prima mb-3): un filo piu' compatto
 
-  if (testo) {
-    const PARAGRAFO = creaElemento("p", "lh-lg", COLONNA, testo);
-    PARAGRAFO.style.whiteSpace = "pre-line"; // rispetta gli "a capo" del testo
-  } else {
+  if (!testo) {
     creaElemento("p", "text-body-secondary", COLONNA, "Testo non ancora disponibile");
+    return;
   }
+
+  // Il riquadro che scorre. position-relative serve a CENTRA_RIGA (offsetTop).
+  const BOX = creaElemento("div", "lyrics-box position-relative", COLONNA);
+  BOX.tabIndex = 0; // si puo' raggiungere col tasto Tab e scorrere con le frecce della tastiera
+  BOX.setAttribute("aria-label", "Testo del brano, scorri per leggere");
+
+  // Divido la stringa in righe, tolgo gli spazi ai lati e scarto le righe vuote
+  // (il testo semplice di LRCLIB ha righe vuote tra una strofa e l'altra)
+  const FRASI = testo
+    .split("\n")
+    .map((frase) => frase.trim())
+    .filter(Boolean);
+
+  // Una <p> per ogni frase. map restituisce l'array degli elementi creati:
+  // mi serve dopo per capire quale riga e' al centro.
+  const RIGHE = FRASI.map((frase) => {
+    const P = creaElemento("p", "lyrics-line", BOX, frase);
+    P.addEventListener("click", () => CENTRA_RIGA(BOX, P)); // click = porta la riga al centro
+    return P;
+  });
+
+  /*
+    AGGIORNA_RIGA_ATTIVA()
+    - Trova la riga il cui centro e' piu' vicino al centro del riquadro
+      e le da' la classe is-active (bianca e piena, vedi app.css).
+    - getBoundingClientRect() da' la posizione sullo schermo: confronto
+      il centro di ogni riga con il centro del riquadro.
+  */
+  const AGGIORNA_RIGA_ATTIVA = () => {
+    const BOX_RECT = BOX.getBoundingClientRect();
+    const CENTRO_BOX = BOX_RECT.top + BOX_RECT.height / 2;
+
+    let rigaPiuVicina = RIGHE[0];
+    let distanzaMinima = Infinity; // Infinity = "piu' grande di qualsiasi numero"
+
+    RIGHE.forEach((riga) => {
+      const RECT = riga.getBoundingClientRect();
+      const DISTANZA = Math.abs(RECT.top + RECT.height / 2 - CENTRO_BOX); // abs = distanza sempre positiva
+      if (DISTANZA < distanzaMinima) {
+        distanzaMinima = DISTANZA;
+        rigaPiuVicina = riga;
+      }
+    });
+
+    // toggle con il secondo argomento: true = aggiungi la classe, false = toglila
+    RIGHE.forEach((riga) => riga.classList.toggle("is-active", riga === rigaPiuVicina));
+  };
+
+  BOX.addEventListener("scroll", AGGIORNA_RIGA_ATTIVA); // a ogni movimento della rotellina
+  AGGIORNA_RIGA_ATTIVA(); // all'inizio: accende la prima riga
 };
 
 /* ============================ CARICAMENTO ============================ */
@@ -218,7 +387,9 @@ const LOAD_TRACK = async () => {
   // Il testo arriva dopo: intanto mostro un messaggio di attesa
   TRACK_LYRICS.replaceChildren();
   creaElemento("p", "text-center text-body-secondary", TRACK_LYRICS, "Caricamento del testo...");
-  const TESTO = await CERCA_TESTO(TRACK.title, TRACK.artist);
+  // Passo anche album e durata: LRCLIB trova piu' facilmente
+  // la versione giusta del brano (es. non la versione live o remix)
+  const TESTO = await CERCA_TESTO(TRACK.title, TRACK.artist, TRACK.album, TRACK.durationMs);
   RENDER_TESTO(TESTO);
 };
 
