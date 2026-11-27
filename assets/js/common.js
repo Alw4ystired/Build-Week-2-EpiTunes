@@ -436,24 +436,24 @@ class Player {
       }
     });
 
-    const PLAYER_COVER = creaElemento("div", "player-cover rounded-1 overflow-hidden flex-shrink-0 bg-black", PLAYER_TRACK);
+    const PLAYER_COVER = creaElemento("div", "player-cover rounded-2 overflow-hidden flex-shrink-0 bg-black", PLAYER_TRACK);
     const COVER_IMG = creaElemento("img", "w-100 h-100 object-fit-cover d-block", PLAYER_COVER, undefined, "player-cover-img");
     COVER_IMG.alt = "";
 
     const PLAYER_META = creaElemento("div", "player-meta", PLAYER_TRACK);
-    creaElemento("p", "player-title fw-semibold text-truncate m-0", PLAYER_META, "Seleziona un brano", "player-title");
-    creaElemento("p", "player-artist text-body-secondary text-truncate m-0", PLAYER_META, "—", "player-artist");
+    creaElemento("p", "player-title fw-bold text-truncate m-0", PLAYER_META, "Seleziona un brano", "player-title");
+    creaElemento("p", "player-artist text-body-secondary text-truncate m-0", PLAYER_META, "La tua musica ti aspetta", "player-artist");
 
     /* ---------- CENTRO: controlli + barra di avanzamento ---------- */
     const PLAYER_CENTER = creaElemento("div", "player-center d-flex flex-column align-items-center gap-2", FOOTER);
 
     const CONTROLS = creaElemento("div", "player-controls d-flex align-items-center gap-3", PLAYER_CENTER);
     const BOTTONI = [
-      { id: "btn-shuffle", cls: "btn-ctrl border-0 bg-transparent", label: "Shuffle", text: "⇄" },
+      { id: "btn-shuffle", cls: "btn-ctrl border-0 bg-transparent d-none d-sm-inline-block", label: "Shuffle", text: "⇄" },
       { id: "btn-prev", cls: "btn-ctrl border-0 bg-transparent", label: "Precedente", text: "⏮" },
       { id: "btn-toggle", cls: "btn-play rounded-circle border-0 bg-white text-black fs-6", label: "Play/Pausa", text: "▶" },
       { id: "btn-next", cls: "btn-ctrl border-0 bg-transparent", label: "Successivo", text: "⏭" },
-      { id: "btn-repeat", cls: "btn-ctrl border-0 bg-transparent", label: "Ripeti", text: "↻" },
+      { id: "btn-repeat", cls: "btn-ctrl border-0 bg-transparent d-none d-sm-inline-block", label: "Ripeti", text: "↻" },
     ];
     BOTTONI.forEach(({ id, cls, label, text }) => {
       const BTN = creaElemento("button", cls, CONTROLS, text, id);
@@ -461,10 +461,10 @@ class Player {
     });
 
     const PROGRESS = creaElemento("div", "player-progress d-flex align-items-center gap-2 w-100", PLAYER_CENTER);
-    creaElemento("span", undefined, PROGRESS, "0:00", "time-current");
+    creaElemento("span", "d-none d-sm-inline", PROGRESS, "0:00", "time-current");
     const PROGRESS_BAR = creaElemento("div", "progress-bar flex-grow-1", PROGRESS, undefined, "progress-bar");
     creaElemento("div", "progress-fill h-100", PROGRESS_BAR, undefined, "progress-fill");
-    creaElemento("span", undefined, PROGRESS, "0:00", "time-total");
+    creaElemento("span", "d-none d-sm-inline", PROGRESS, "0:00", "time-total");
 
     let staTrascinando = false;
 
@@ -809,8 +809,8 @@ const TOGGLE_FAVOURITE = (track) => {
     sia i bottoncini nella topbar (sotto i 576px).
 */
 const LINKS_NAV = [
-  { href: "index.html", page: "home", ico: "🏠", text: "Home" },
-  { href: "search.html", page: "search", ico: "🔍", text: "Cerca" },
+  { href: "index.html", page: "home", ico: "⌂", text: "Home" },
+  { href: "search.html", page: "search", ico: "⌕", text: "Cerca" },
 ];
 
 /*
@@ -825,14 +825,14 @@ const RENDER_SIDEBAR = (activePage) => {
 
   /* ---------- Logo ---------- */
   const BRAND = creaElemento("div", "brand d-flex align-items-center gap-2 fw-bold fs-5", SIDEBAR);
-  creaElemento("div", "brand-mark d-flex align-items-center justify-content-center rounded-2 text-black fw-bold", BRAND, "E");
+  creaElemento("div", "brand-mark d-flex align-items-center justify-content-center rounded-3 text-black fw-bolder", BRAND, "E");
   creaElemento("span", "brand-text d-none d-lg-inline", BRAND, "EpiTunes");
 
   /* ---------- Navigazione ---------- */
   const NAV = creaElemento("nav", "sidebar-nav d-flex flex-column gap-1 mb-4", SIDEBAR);
   LINKS_NAV.forEach(({ href, page, ico, text }) => {
-    const CLASSE_ATTIVA = activePage === page ? " active" : "";
-    const A = creaElemento("a", `d-flex align-items-center justify-content-center justify-content-lg-start gap-3 px-0 px-lg-3 py-2 rounded-2 fw-semibold${CLASSE_ATTIVA}`, NAV);
+    const CLASSE_ATTIVA = activePage === page ? " active fw-bold" : " fw-medium";
+    const A = creaElemento("a", `d-flex align-items-center justify-content-center justify-content-lg-start gap-3 px-0 px-lg-3 py-2 rounded-3${CLASSE_ATTIVA}`, NAV);
     A.href = href;
     A.dataset.page = page; // diventa data-page="..."
     creaElemento("span", "ico text-center fs-5", A, ico);
@@ -854,11 +854,11 @@ const RENDER_SIDEBAR = (activePage) => {
   - Stesse classi delle frecce (nav-btn rounded-circle...): stessa grandezza e stile.
   - d-flex + align/justify-content-center centrano l'icona dentro il cerchio.
 */
-const RENDER_NAV_MOBILE = () => {
+const RENDER_NAV_MOBILE = (activePage) => {
   const TOPBAR_NAV = document.querySelector(".topbar-nav");
   if (!TOPBAR_NAV) return;
 
-  LINKS_NAV.forEach(({ href, ico, text }) => {
+  LINKS_NAV.forEach(({ href, page, ico, text }) => {
     const A = creaElemento(
       "a",
       "nav-btn rounded-circle border-0 lh-1 d-flex d-sm-none align-items-center justify-content-center",
@@ -867,6 +867,11 @@ const RENDER_NAV_MOBILE = () => {
     );
     A.href = href;
     A.setAttribute("aria-label", text);
+    // la pagina in cui sono e' accesa (lime), come il link attivo della sidebar
+    if (activePage === page) {
+      A.classList.add("active");
+      A.setAttribute("aria-current", "page");
+    }
   });
 };
 
@@ -884,12 +889,12 @@ const RENDER_SIDEBAR_FAVS = () => {
   LISTA.replaceChildren();
 
   if (PREFERITI.length === 0) {
-    creaElemento("li", "text-truncate rounded-1 px-2 py-2", LISTA, "Nessun preferito");
+    creaElemento("li", "text-truncate rounded-2 px-2 py-2", LISTA, "Nessun preferito");
     return;
   }
 
   PREFERITI.forEach((track) => {
-    const RIGA = creaElemento("li", "text-truncate rounded-1 px-2 py-2", LISTA, track.title);
+    const RIGA = creaElemento("li", "text-truncate rounded-2 ps-2 pe-5 py-2", LISTA, track.title);
     RIGA.dataset.trackId = String(track.id);
 
     const BOTTONE = creaElemento("button", "sidebar-play position-absolute rounded-circle border-0 text-black d-flex align-items-center justify-content-center", RIGA, "▶");
@@ -1013,7 +1018,7 @@ const attivaFrecce = () => {
 */
 const INIT_PAGE = (activePage) => {
   RENDER_SIDEBAR(activePage);
-  RENDER_NAV_MOBILE();
+  RENDER_NAV_MOBILE(activePage);
   attivaFrecce();
   const PLAYER = new Player();
   PLAYER.mount();
