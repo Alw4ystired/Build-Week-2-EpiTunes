@@ -163,6 +163,33 @@ button {
     letter-spacing: 1.5px;
   }
 
+  /* ⭐ NUOVO — ogni lista dei preferiti (tracce, album, artisti) mostra al
+     massimo 4 voci: dalla quinta in poi si scorre DENTRO la lista.
+     Altezza di una voce: 20px di riga + 8px sopra + 8px sotto (py-2) = 36px.
+     4 voci + 3 spazi da 4px tra loro (gap-1) = 4*36 + 3*4 = 156px. */
+  & .sidebar-list {
+    --altezza-voce: 36px;
+    max-height: calc(var(--altezza-voce) * 4 + 4px * 3);
+    overflow-y: auto;             /* barra di scorrimento solo se le voci sono piu' di 4 */
+    overscroll-behavior: contain; /* in fondo alla lista NON fa scorrere tutta la sidebar */
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
+    }
+
+    & li {
+      line-height: 20px; /* altezza della riga fissa: cosi' il calcolo dei 156px e' esatto */
+      flex-shrink: 0;    /* la lista e' un flex in colonna: senza, le voci si schiaccerebbero */
+    }
+  }
+
   & .sidebar-list li {
     position: relative;
     font-size: 13px;
@@ -407,7 +434,9 @@ button {
 /* ============================ Tracklist ============================ */
 
 .track-row {
-  grid-template-columns: 32px 1fr 80px 48px;
+  /* ⭐ MODIFICA — l'ultima colonna era 48px (solo il cuore); ora contiene
+     anche il bottone "Testo": "auto" la fa larga quanto serve */
+  grid-template-columns: 32px 1fr 80px auto;
   gap: 12px;
   padding: 8px 12px;
   border-radius: var(--radius-sm);
@@ -505,24 +534,27 @@ button {
   }
 }
 
+/* Ricerche recenti: la tendina e' attaccata alla barra, come quella di Google.
+   Quando e' aperta la barra perde gli angoli tondi in basso (!important perche'
+   sovrascrive rounded-pill di Bootstrap) e il pannello continua il riquadro. */
 .search-box:has(.recent-searches:not([hidden])) .search-input {
   border-radius: 24px 24px 0 0 !important;
-  border-bottom-color: var(--border);
+  border-bottom-color: var(--border); /* la riga che separa barra e tendina */
 }
 
 .recent-searches {
   position: absolute;
-  top: 100%;
+  top: 100%;                         /* subito sotto la barra, senza spazio in mezzo */
   left: 0;
   width: 100%;
   max-width: 480px;
   z-index: 10;
   padding: 12px 18px 16px;
-  background: var(--bg-input);
-  border: 1px solid var(--accent);
+  background: var(--bg-input);       /* stesso colore della barra: sembra un riquadro solo */
+  border: 1px solid var(--accent);   /* lo stesso lime della barra a fuoco */
   border-top: 0;
   border-radius: 0 0 24px 24px;
-  box-shadow: 0 14px 20px -10px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 14px 20px -10px rgba(0, 0, 0, 0.5); /* ombra solo verso il basso */
 
   & .recent-title {
     font-size: 0.72rem;
@@ -531,7 +563,7 @@ button {
 }
 
 .recent-chip {
-  background: var(--bg-elev-hover);
+  background: var(--bg-elev-hover);  /* un po' piu' chiaro del pannello, se no non si vede */
   border: 1px solid var(--border);
   color: var(--text-primary);
   max-width: 100%;
@@ -657,6 +689,46 @@ button {
 
 .empty {
   padding: 32px;
+}
+
+/* ============================ Carosello "In primo piano" ============================ */
+
+/* Copertina grande del carosello */
+.feature-art-lg {
+  width: min(220px, 40%);
+  aspect-ratio: 1 / 1;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45);
+}
+
+#carosello-primo-piano {
+  /* Frecce: piccoli cerchi discreti invece delle bande larghe di Bootstrap */
+  & .carousel-control-prev,
+  & .carousel-control-next {
+    width: 3rem;
+    opacity: 0.7;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+
+  & .carousel-control-prev-icon,
+  & .carousel-control-next-icon {
+    width: 2rem;
+    height: 2rem;
+    background-size: 40%;
+    background-color: rgba(255, 255, 255, 0.12);
+    border-radius: 50%;
+  }
+
+  /* Pallini: piccoli e rotondi invece delle barrette */
+  & .carousel-indicators [data-bs-target] {
+    width: 8px;
+    height: 8px;
+    border: 0;
+    border-radius: 50%;
+    margin: 0 4px;
+  }
 }
 
 /* ============================ Responsive ============================ */
