@@ -67,6 +67,8 @@ const STORAGE_KEY_HISTORY = "epitunes_history";
 const STORAGE_KEY_FAVOURITES = "epitunes_favourites";
 const STORAGE_KEY_LAST_SEARCH = "epitunes_last_search";
 const STORAGE_KEY_PLAYER = "epitunes_player"; // brano in riproduzione + secondo a cui era arrivato
+const STORAGE_KEY_VOLUME = "epitunes_volume"; 
+const DEFAULT_VOLUME = 0.5;
 const MAX_HISTORY = 12;
 
 /* ============================ 2. Helpers ============================ */
@@ -550,7 +552,7 @@ class Player {
     });
 
     this.aggiornaInterruttori();
-    this.setVolume(0.5);
+   this.setVolume(GET_VOLUME());
     this.ripristina(); // se c'era un brano in riproduzione nella pagina prima, lo rimetto
   }
 
@@ -689,11 +691,12 @@ class Player {
   }
 
   setVolume(v) {
-    const VOLUME = Math.min(1, Math.max(0, v));
-    this.audio.volume = VOLUME;
+  const VOLUME = Math.min(1, Math.max(0, v));
+  this.audio.volume = VOLUME;
+  localStorage.setItem(STORAGE_KEY_VOLUME, String(VOLUME));
 
-    if (this.el.volumeFill) this.el.volumeFill.style.width = `${VOLUME * 100}%`;
-  }
+  if (this.el.volumeFill) this.el.volumeFill.style.width = `${VOLUME * 100}%`;
+}
 
   seek(percent) {
     if (!this.audio.duration) return;
@@ -742,6 +745,14 @@ const READ_ARRAY = (chiave) => {
 */
 const WRITE_ARRAY = (chiave, array) => {
   localStorage.setItem(chiave, JSON.stringify(array));
+};
+
+const GET_VOLUME = () => {
+  const SALVATO = localStorage.getItem(STORAGE_KEY_VOLUME);
+  if (SALVATO === null) return DEFAULT_VOLUME; // Number(null) darebbe 0 (muto)
+
+  const VOLUME = Number(SALVATO);
+  return Number.isNaN(VOLUME) ? DEFAULT_VOLUME : VOLUME;
 };
 
 const GET_HISTORY = () => READ_ARRAY(STORAGE_KEY_HISTORY);
