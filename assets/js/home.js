@@ -134,23 +134,39 @@ const CREA_GRIGLIA_TRACCE = (parent, tracks) => {
       `Riproduci ${track.title} di ${track.artist}`
     );
     PLAY_BUTTON.disabled = !track.previewUrl;
+  });
 
-    PLAY_BUTTON.addEventListener("click", (event) => {
-      event.stopPropagation();
+  /*
+    Event delegation.
+    Invece di tre ascoltatori su ogni card (cuore, play, card intera), ne
+    mettiamo UNO solo sulla griglia. Il click "sale" dal bottone alla card
+    alla griglia: closest() dice da dove e' partito, e il data-track-id
+    della card dice quale brano e'.
+  */
+  const PER_ID = new Map(tracks.map((brano) => [String(brano.id), brano]));
 
-      if (track.previewUrl) {
-        PLAYER.play(track, tracks); // la coda e' la riga da cui parto
-      }
-    });
+  GRID.addEventListener("click", (event) => {
+    const CARD = event.target.closest(".card");
+    if (!CARD) return; // click nel vuoto fra una card e l'altra
 
-    // Click sulla card per riprodurre
-    CARD.addEventListener("click", (event) => {
-      if (event.target.closest("button")) return;
+    const TRACK = PER_ID.get(CARD.dataset.trackId);
+    if (!TRACK) return;
 
-      if (track.previewUrl) {
-        PLAYER.play(track, tracks); // la coda e' la riga da cui parto
-      }
-    });
+    // Cuore
+    if (event.target.closest(".card-fav")) {
+      TOGGLE_FAVOURITE(TRACK);
+      RENDER_SIDEBAR_FAVS(); // la lista nella sidebar
+      AGGIORNA_CUORI(TRACK); // tutti i cuori di questo brano, anche nelle altre righe
+      AGGIORNA_PREFERITI(); // la sezione "I tuoi preferiti"
+      return;
+    }
+
+    // Un altro bottone che qualcuno aggiungesse in futuro non fa partire la musica
+    const BOTTONE = event.target.closest("button");
+    if (BOTTONE && !BOTTONE.classList.contains("card-play")) return;
+
+    // Bottone play, oppure un punto qualsiasi della card
+    if (TRACK.previewUrl) PLAYER.play(TRACK, tracks); // la coda e' la riga da cui parto
   });
 
   AGGIORNA_CARD_PLAY(); // le card nuove partono con l'icona giusta (▶ o ⏸)
@@ -488,10 +504,12 @@ CODA_LISTA.style.maxHeight = "280px"; // oltre questa altezza la lista scorre, n
 
 /*
   RENDER_CODA()
-  - Mostra fino a 5 brani della coda del player, partendo da quello in ascolto.
-  - Ogni riga e' un <button>: click (o Invio da tastiera) = suona quel brano restando nella stessa coda.
+  - Mostra tutta la coda del player, nel suo ordine (01 = primo brano della coda).
+  - Il brano in ascolto e' acceso (lime e grassetto) e la lista scorre da sola
+    per portarlo al centro: con ⏮ / ⏭ del player la riga accesa si sposta
+    e la lista la segue.
+  - Ogni riga e' un <button>: click = suona quel brano restando nella stessa coda.
   - Viene richiamata a ogni "cambio-brano" (evento lanciato da Player.play in common.js).
-  - (tolta la costante MAX_CODA = 5: ora si vede tutta la coda, non serve piu')
 */
 const RENDER_CODA = () => {
   const SCROLL_PRIMA = CODA_LISTA.scrollTop; // dove era scorsa la lista: svuotandola tornerebbe in cima
@@ -503,30 +521,40 @@ const RENDER_CODA = () => {
     return;
   }
 
-  // Parto dal brano corrente (se c'e') cosi' vedo "questo + i prossimi"
-  const INIZIO = Math.max(0, PLAYER.indiceInCoda());
-  const QUANTI = Math.min(MAX_CODA, CODA.length);
+  let rigaAttuale = null; // la riga del brano in ascolto, se c'e'
 
-  for (let i = 0; i < QUANTI; i++) {
-    const BRANO = CODA[(INIZIO + i) % CODA.length]; // % = arrivato in fondo riparto dall'inizio
-
+  CODA.forEach((BRANO, i) => {
     const RIGA = creaElemento("li", "border-top", CODA_LISTA);
     const BOTTONE = creaElemento("button", "queue-btn w-100 d-flex justify-content-between gap-3 bg-transparent border-0 text-start small py-2 px-1", RIGA);
     BOTTONE.type = "button";
-    BOTTONE.setAttribute("aria-label", `Riproduci ${brano.title} di ${brano.artist}`);
+    BOTTONE.setAttribute("aria-label", `Riproduci ${BRANO.title} di ${BRANO.artist}`);
 
     // Il brano in ascolto e' acceso (lime e grassetto)
     if (PLAYER.currentTrack && PLAYER.currentTrack.id === BRANO.id) {
       BOTTONE.classList.add("is-current", "fw-bold");
+      rigaAttuale = RIGA;
     }
 
     const TITOLO = creaElemento("span", "text-truncate", BOTTONE);
-    creaElemento("span", "text-body-secondary fw-normal me-2", TITOLO, `0${i + 1}`);
+    // 01, 02 ... 09, poi 10, 11: lo zero davanti solo sotto il 10
+    const NUMERO = i + 1 < 10 ? `0${i + 1}` : `${i + 1}`;
+    creaElemento("span", "text-body-secondary fw-normal me-2", TITOLO, NUMERO);
     creaElemento("span", "queue-title", TITOLO, BRANO.title);
     creaElemento("span", "text-body-secondary fw-normal flex-shrink-0", BOTTONE, `${BRANO.artist} · ${FORMAT_TIME(BRANO.durationMs)}`);
 
     // play() sul brano gia' in ascolto fa play/pausa: va bene anche qui
     BOTTONE.addEventListener("click", () => PLAYER.play(BRANO, CODA));
+  });
+
+  // Rimetto la lista dov'era scorsa, poi la faccio scorrere (morbida) fino
+  // al brano in ascolto, al centro del riquadro. Stesso calcolo di CENTRA_RIGA
+  // in track.js: offsetTop funziona perche' la lista ha position-relative.
+  CODA_LISTA.scrollTop = SCROLL_PRIMA;
+  if (rigaAttuale) {
+    CODA_LISTA.scrollTo({
+      top: rigaAttuale.offsetTop - CODA_LISTA.clientHeight / 2 + rigaAttuale.offsetHeight / 2,
+      behavior: "smooth",
+    });
   }
 };
 

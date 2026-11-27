@@ -41,8 +41,6 @@ let caricamentoAttuale = 0;
 
 /* ============================ TESTO (LYRICS) ============================ */
 
-/* ============================ TESTO (LYRICS) ============================ */
-
 // ⭐ NUOVO — LRCLIB: database gratuito di testi, anche sincronizzati.
 // Non serve nessuna chiave e funziona direttamente dal browser (CORS abilitato).
 // Limite: circa 45 richieste al minuto, a noi ne serve 1-2 per pagina.

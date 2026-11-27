@@ -326,8 +326,6 @@ class Player {
     // in basso a sinistra) salvo brano + secondo + play/pausa: la pagina dopo riparte da li'
     window.addEventListener("pagehide", () => this.salvaStato());
 
-    // Ogni volta che l'audio parte o si ferma (da qualunque pulsante) aggiorno
-    // le icone ▶/⏸ della sidebar e delle card
     // L'API da' durationMs del brano INTERO, ma noi suoniamo un'anteprima di
     // circa 30 secondi. Appena il file e' caricato il browser sa quanto dura
     // davvero: sovrascrivo il tempo totale con quello.
@@ -337,6 +335,8 @@ class Player {
       }
     });
 
+    // Ogni volta che l'audio parte o si ferma (da qualunque pulsante) aggiorno
+    // le icone ▶/⏸ della sidebar e delle card
     this.audio.addEventListener("play", () => AGGIORNA_SIDEBAR_PLAY());
     this.audio.addEventListener("pause", () => AGGIORNA_SIDEBAR_PLAY());
   }
@@ -520,9 +520,8 @@ class Player {
     });
 
     document.addEventListener("mousemove", (evento) => {
-      evento.preventDefault();
       if (staTrascinandoVolume) {
-        SPOSTA_VOLUME(evento);
+        SPOSTA_VOLUME(evento); // dentro c'e' gia' preventDefault: solo mentre trascino
       }
     });
 
