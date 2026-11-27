@@ -21,7 +21,8 @@ La ricerca, che interroga l'API mentre si digita e divide i risultati in brani, 
 ## Funzionalità
 
 - **Ricerca** per brani, album e artisti, con le tre chiamate in parallelo
-- **Player audio** nel footer: play, pausa, barra di avanzamento e volume trascinabili
+- **Player audio** nel footer: play, pausa, barra di avanzamento e volume trascinabili, mischia, precedente, successivo e ripeti
+- **Coda di riproduzione**: l'elenco da cui hai fatto partire il brano — l'album, i risultati di ricerca, una riga della home, i preferiti — diventa la coda su cui si muovono precedente e successivo
 - **La musica non si ferma cambiando pagina**: il player riprende dal secondo a cui era arrivato
 - **Icona sincronizzata**: il brano in riproduzione mostra ⏸ sulla sua card e nella sidebar
 - **Preferiti** salvati in locale, sincronizzati tra le card, la sidebar e le pagine album, artista e brano
@@ -164,6 +165,7 @@ Le attività sono distribuite per giorno sulla bacheca del gruppo, dove vengono 
 - [x] Ricerca di brani, album e artisti con le tre chiamate in parallelo
 - [x] Sidebar con l'elenco dei preferiti
 - [x] Player audio: play, pausa, barra di avanzamento e volume
+- [x] Bottoni del player: mischia, precedente, successivo e ripeti
 - [x] Home: suggerimenti, preferiti e riprodotti di recente
 - [x] Pagina album con tracklist e cuori sincronizzati
 - [x] Pagina artista
@@ -173,7 +175,6 @@ Le attività sono distribuite per giorno sulla bacheca del gruppo, dove vengono 
 
 ### Da fare
 
-- [ ] **Bottoni del player**: mischia, precedente, successivo e ripeti sono disegnati ma non collegati a niente. Solo play/pausa funziona
 - [ ] **Bug — preferiti dalla pagina album**: il cuore grande dell'hero salva la **prima traccia**, non l'album. Serve decidere cosa significa "album preferito" e dove finisce
 - [ ] **Bug — nessun preferito per l'artista**: nella pagina artista il cuore c'è solo sulle righe della tracklist, non sull'artista stesso
 - [ ] **Tempo totale**: il player mostra la durata del brano intero, mentre l'anteprima dura 30 secondi

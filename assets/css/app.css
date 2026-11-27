@@ -386,6 +386,11 @@ button {
     &:hover {
       color: var(--text-primary);
     }
+
+    /* ⇄ e ↻ accesi */
+    &.is-on {
+      color: var(--success);
+    }
   }
 
   & .btn-play {

@@ -75,6 +75,9 @@ const CARICA_FOTO_ARTISTA = async (imageWrap, nome) => {
   IMAGE.src = `${FOTO}/medium`;
 };
 
+// L'elenco dei brani mostrati adesso: e' la coda dei bottoni del player.
+let BRANI_IN_PAGINA = [];
+
 const RENDER_TRACK_CARD = (rawTrack) => {
   const TRACK = new Track(rawTrack);
   const CARD = CREATE_CARD(GRID_TRACKS, "article");
@@ -120,12 +123,12 @@ const RENDER_TRACK_CARD = (rawTrack) => {
 
   PLAY_BUTTON.addEventListener("click", (event) => {
     event.stopPropagation();
-    if (TRACK.previewUrl) PLAYER.play(TRACK);
+    if (TRACK.previewUrl) PLAYER.play(TRACK, BRANI_IN_PAGINA);
   });
 
   CARD.addEventListener("click", (event) => {
     if (event.target.closest("button")) return;
-    if (TRACK.previewUrl) PLAYER.play(TRACK);
+    if (TRACK.previewUrl) PLAYER.play(TRACK, BRANI_IN_PAGINA);
   });
 };
 
@@ -203,6 +206,7 @@ const DO_SEARCH = async (term) => {
   const ALBUMS = ALBUM_DATA.results || [];
   const ARTISTS = ARTIST_DATA.results || [];
 
+  BRANI_IN_PAGINA = TRACKS.map((grezzo) => new Track(grezzo)); // la coda, prima di disegnare
   TRACKS.forEach(RENDER_TRACK_CARD);
   AGGIORNA_CARD_PLAY(); // le card nuove partono con l'icona giusta (▶ o ⏸)
   ALBUMS.forEach(RENDER_ALBUM_CARD);

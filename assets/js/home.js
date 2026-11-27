@@ -120,7 +120,7 @@ const RENDER_ROW = (rowTitle, tracks, idSezione) => {
       event.stopPropagation();
 
       if (track.previewUrl) {
-        PLAYER.play(track);
+        PLAYER.play(track, tracks); // la coda e' la riga da cui parto
       }
     });
 
@@ -129,7 +129,7 @@ const RENDER_ROW = (rowTitle, tracks, idSezione) => {
       if (event.target.closest("button")) return;
 
       if (track.previewUrl) {
-        PLAYER.play(track);
+        PLAYER.play(track, tracks); // la coda e' la riga da cui parto
       }
     });
   });
