@@ -163,6 +163,33 @@ button {
     letter-spacing: 1.5px;
   }
 
+  /* ⭐ NUOVO — ogni lista dei preferiti (tracce, album, artisti) mostra al
+     massimo 4 voci: dalla quinta in poi si scorre DENTRO la lista.
+     Altezza di una voce: 20px di riga + 8px sopra + 8px sotto (py-2) = 36px.
+     4 voci + 3 spazi da 4px tra loro (gap-1) = 4*36 + 3*4 = 156px. */
+  & .sidebar-list {
+    --altezza-voce: 36px;
+    max-height: calc(var(--altezza-voce) * 4 + 4px * 3);
+    overflow-y: auto;             /* barra di scorrimento solo se le voci sono piu' di 4 */
+    overscroll-behavior: contain; /* in fondo alla lista NON fa scorrere tutta la sidebar */
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
+    }
+
+    & li {
+      line-height: 20px; /* altezza della riga fissa: cosi' il calcolo dei 156px e' esatto */
+      flex-shrink: 0;    /* la lista e' un flex in colonna: senza, le voci si schiaccerebbero */
+    }
+  }
+
   & .sidebar-list li {
     position: relative;
     font-size: 13px;
@@ -407,7 +434,9 @@ button {
 /* ============================ Tracklist ============================ */
 
 .track-row {
-  grid-template-columns: 32px 1fr 80px 48px;
+  /* ⭐ MODIFICA — l'ultima colonna era 48px (solo il cuore); ora contiene
+     anche il bottone "Testo": "auto" la fa larga quanto serve */
+  grid-template-columns: 32px 1fr 80px auto;
   gap: 12px;
   padding: 8px 12px;
   border-radius: var(--radius-sm);
